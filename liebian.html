@@ -151,12 +151,12 @@
               </div>
             </div>
             <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridSupply"></table></div></div>
-            <div class="sub">列固定：销售采购订单号 / 销售型号 / 颜色 / 规格 / 求和项:需求数量</div>
+            <div class="sub">列固定：销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量（物料编码在订单号右边）</div>
           </div>
         </div>
         <div class="footer-note">
-          规则：小平台“同色先吃→跨色补缺→按型号+规格凑箱规”；亚马逊“按箱规向上取整+按批次滚动”；跨规格补缺只在【规格精准匹配=关】时启用，并且“日缺口优先吃美结余”。<br/>
-          输出口径：裂变输出 = 完整在途总量（未分配部分写入“未分配站点名”）。
+          规则：小平台“同色先吃→跨色补缺（同规格）→按型号+规格凑箱规”；亚马逊“按箱规向上取整+按批次滚动”；跨规格补缺只在【规格精准匹配=关】时启用，并且“日缺口优先吃美结余”。<br/>
+          输出口径：裂变输出 = 完整在途总量（未分配部分写入“未分配站点名”）；每行都会带【销售采购订单号 + 物料编码】两维度。
         </div>
       </div>
 
@@ -170,7 +170,7 @@
           <div class="card">
             <h3 style="margin:0 0 10px 0">上传在途Excel</h3>
             <input id="fileSupply" type="file" accept=".xlsx,.xls" />
-            <div class="sub">默认读取第一个sheet，表头需与页面列名一致。</div>
+            <div class="sub">默认读取第一个sheet，表头需与页面列名一致（物料编码在订单号右边）。</div>
           </div>
         </div>
         <div class="footer-note">如果你看见“XLSX未定义”，说明没放本地 xlsx.full.min.js；用TSV下载也能导入。</div>
@@ -185,7 +185,7 @@
           <button class="btn primary" id="btnDownloadXLSX" disabled>下载XLSX</button>
         </div>
       </div>
-      <div class="sub">输出列：销售采购订单号 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
+      <div class="sub">输出列：销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
       <div class="hr"></div>
       <div id="outWrap" class="sub">还没有生成结果。</div>
     </div>
@@ -206,9 +206,12 @@
   </div>
 
 <script>
+  // 需求明细列
   const DEMAND_COLS = ["型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
-  const SUPPLY_COLS = ["销售采购订单号","销售型号","颜色","规格","求和项:需求数量"];
-  const OUT_COLS = ["销售采购订单号","销售型号","颜色","站点","规格","需求数量"];
+  // 在途明细列：物料编码放在销售采购订单号右边
+  const SUPPLY_COLS = ["销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
+  // 输出列：同样把物料编码放在销售采购订单号右边
+  const OUT_COLS = ["销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
 
   const $ = (id)=>document.getElementById(id);
   const state = { outRows: [], unmetRows: [], leftRows: [] };
@@ -413,17 +416,20 @@
     });
   }
 
+  // 供给池：带上物料编码
   function makeSupplyPool(supplyRows){
     return supplyRows.map((r, idx)=>({
       __idx: idx,
       order: (r["销售采购订单号"]??"").trim(),
+      mat:   (r["物料编码"]??"").trim(),
       model: (r["销售型号"]??"").trim(),
       color: (r["颜色"]??"").trim(),
-      spec: normSpec(r["规格"]),
+      spec:  normSpec(r["规格"]),
       qtyLeft: toNum(r["求和项:需求数量"]),
-    })).filter(x => x.order || x.model || x.color || x.spec || x.qtyLeft);
+    })).filter(x => x.order || x.mat || x.model || x.color || x.spec || x.qtyLeft);
   }
 
+  // consume 返回：把 mat 带出来
   function consumeFromSupply(pool, matchFn, qtyNeed){
     const allocs = [];
     let need = qtyNeed;
@@ -438,15 +444,16 @@
       s.qtyLeft -= take;
       need -= take;
 
-      allocs.push({ order:s.order, model:s.model, color:s.color, spec:s.spec, qty:take });
+      allocs.push({ order:s.order, mat:s.mat, model:s.model, color:s.color, spec:s.spec, qty:take });
     }
     return allocs;
   }
 
+  // 合并同站点：Key 必须包含物料编码，避免不同物料被合并到一行
   function consolidateOut(rows){
     const m = new Map();
     for(const r of rows){
-      const k = [r["销售采购订单号"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
+      const k = [r["销售采购订单号"], r["物料编码"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
       const cur = m.get(k) || { ...r, "需求数量": 0 };
       cur["需求数量"] = toNum(cur["需求数量"]) + toNum(r["需求数量"]);
       m.set(k, cur);
@@ -476,6 +483,7 @@
     function addOut(site, alloc){
       out.push({
         "销售采购订单号": alloc.order,
+        "物料编码": alloc.mat,
         "销售型号": alloc.model,
         "颜色": alloc.color,
         "站点": site,
@@ -632,21 +640,23 @@
       }
     }
 
-    // 供给剩余（对账表）
+    // 在途剩余（对账表）带物料编码
     const left = supplyPool.filter(s => s.qtyLeft > 0).map(s => ({
       "销售采购订单号": s.order,
+      "物料编码": s.mat,
       "销售型号": s.model,
       "颜色": s.color,
       "规格": s.spec,
       "剩余数量": s.qtyLeft
     }));
 
-    // 把剩余追加进裂变输出，保证“裂变输出=完整在途总量”
+    // 把剩余追加进裂变输出，保证“裂变输出=完整在途总量”，并带物料编码
     const siteName = (unassignedSite || "未分配/留库存").trim() || "未分配/留库存";
     for(const s of supplyPool){
       if(s.qtyLeft > 0){
         out.push({
           "销售采购订单号": s.order,
+          "物料编码": s.mat,
           "销售型号": s.model,
           "颜色": s.color,
           "站点": siteName,
@@ -700,9 +710,9 @@
       {"型号":"U11","颜色":"黑色","站点（平台）":"US","SI数量":"0","品线":"智能平板","需求规格":"美","平台":"亚马逊","箱规信息":"15","优先级":"2"},
     ]);
     fillGridFromObjects("gridSupply", SUPPLY_COLS, [
-      {"销售采购订单号":"T2-20251226-17000","销售型号":"U11","颜色":"黑色","规格":"美","求和项:需求数量":"200"}
+      {"销售采购订单号":"T2-20251226-17000","物料编码":"CP0001","销售型号":"U11","颜色":"黑色","规格":"美","求和项:需求数量":"200"}
     ]);
-    setStatus("已载入示例：日缺口会优先吃美结余（仅当规格精准匹配=关）。", true);
+    setStatus("已载入示例：日缺口会优先吃美结余（仅当规格精准匹配=关）；并且裂变输出会带物料编码。", true);
   });
 
   async function loadExcelToGrid(){
@@ -771,7 +781,7 @@
     }catch(e){
       console.error(e);
       setStatus("失败：" + (e?.message || String(e)), false);
-      $("outWrap").innerHTML = '<div class="sub warn">生成失败：先检查列名是否一致、平台是否写“亚马逊/小平台”、规格是否一致（欧/英/日/美）。</div>';
+      $("outWrap").innerHTML = '<div class="sub warn">生成失败：先检查列名是否一致、平台是否写“亚马逊/小平台”、规格是否一致（欧/英/日/美），以及在途是否包含“物料编码”。</div>';
       $("unmetWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
       $("leftWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
       enableDownloads(false);
@@ -784,6 +794,7 @@
     downloadText("在途分货裂变_裂变输出.tsv", tsv, "text/tab-separated-values;charset=utf-8");
   });
 
+  // 用 Blob 导出，GitHub Pages/部分浏览器更稳
   $("btnDownloadXLSX").addEventListener("click", ()=>{
     if(!state.outRows.length) return;
     if(!window.XLSX){
@@ -791,15 +802,21 @@
       return;
     }
     const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.json_to_sheet(state.outRows);
-    const ws2 = XLSX.utils.json_to_sheet(state.unmetRows);
-    const ws3 = XLSX.utils.json_to_sheet(state.leftRows);
-    XLSX.utils.book_append_sheet(wb, ws1, "裂变输出");
-    XLSX.utils.book_append_sheet(wb, ws2, "未满足需求");
-    XLSX.utils.book_append_sheet(wb, ws3, "在途剩余");
-    XLSX.writeFile(wb, "在途分货裂变_结果.xlsx");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.outRows), "裂变输出");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.unmetRows), "未满足需求");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.leftRows), "在途剩余");
+
+    const buf = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+    const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "在途分货裂变_结果.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   });
 </script>
 </body>
 </html>
-
