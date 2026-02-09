@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>在途分货裂变（飞书风格·表格粘贴·XLSX）</title>
+  <title>在途分货裂变 4.3</title>
 
   <style>
     :root{
@@ -38,7 +38,6 @@
     .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer}
     .tab.active{border-color:rgba(51,112,255,.5);box-shadow:0 0 0 3px rgba(51,112,255,.10)}
     .hidden{display:none !important}
-
     .sheet-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
     .sheet-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
     .sheet-scroll{max-height:340px;overflow:auto}
@@ -49,16 +48,15 @@
     table.sheet tbody tr:last-child td{border-bottom:none}
     .cell{padding:9px 10px;min-height:18px;font-size:13px;outline:none;white-space:pre-wrap;word-break:break-word}
     .cell:focus{box-shadow: inset 0 0 0 2px rgba(51,112,255,.55);background:#F7F9FF}
-    .footer-note{font-size:12px;color:var(--muted);margin-top:8px}
   </style>
 
-  <!-- 离线导出XLSX：把 xlsx.full.min.js 放到 html 同目录 -->
+  <!-- 可选：用于导出XLSX（未引入也能用TSV下载） -->
   <script src="./xlsx.full.min.js"></script>
 </head>
 
 <body>
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill">飞书风格 · 表格粘贴 · XLSX</span></div>
+    <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v4.3</span></div>
     <div class="actions">
       <button class="btn" id="btnLoadSample">载入示例</button>
       <button class="btn danger" id="btnClearAll">清空全部</button>
@@ -105,8 +103,16 @@
           <div class="field">
             <label>箱规取整</label>
             <select id="boxEnabled">
-              <option value="1" selected>开（按箱规倍数向上取整）</option>
-              <option value="0">关（不按箱规；仍保证整数）</option>
+              <option value="1">开（按箱规倍数向上取整）</option>
+              <option value="0" selected>关（不按箱规；仍保证整数）</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>按销售采购订单号匹配</label>
+            <select id="orderMatchEnabled">
+              <option value="0">关（忽略需求侧订单号）</option>
+              <option value="1" selected>开（严格同订单号扣减）</option>
             </select>
           </div>
 
@@ -147,7 +153,7 @@
               </div>
             </div>
             <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridDemand"></table></div></div>
-            <div class="sub">列固定：型号 / 颜色 / 站点（平台） / SI数量 / 品线 / 需求规格 / 平台 / 箱规信息 / 优先级</div>
+            <div class="sub">列固定：销售采购订单号 / 型号 / 颜色 / 站点（平台） / SI数量 / 品线 / 需求规格 / 平台 / 箱规信息 / 优先级</div>
           </div>
 
           <div class="card">
@@ -159,16 +165,8 @@
               </div>
             </div>
             <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridSupply"></table></div></div>
-            <div class="sub">列固定：销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量（上传Excel也兼容：仓库名称/自营销售型号/颜色简易版/充电器版本/求和项:可用量(主单位)）</div>
+            <div class="sub">列固定：库存状态(在库/在途) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量</div>
           </div>
-        </div>
-        <div class="footer-note">
-          规则要点：<br/>
-          1) 60/40 只对【亚马逊】行生效；小平台一次性全额满足（不做 60/40）。<br/>
-          2) 60% 按优先级顺序逐行吃完一轮，再按优先级吃 40% 一轮。<br/>
-          3) 60/40 每轮都“先同规格”，同规格不够且【只允许同规格裂变=关】时允许跨规格；需求=日优先吃美。<br/>
-          4) 防止“两轮取整叠加超分”：每行有一个“整行目标(可按箱规取整)”，每轮计划量都按“剩余额度”封顶。<br/>
-          5) 箱规取整开关：开=按箱规倍数向上取整；关=完全不走箱规倍数逻辑，但全程仍保证整数。
         </div>
       </div>
 
@@ -177,27 +175,26 @@
           <div class="card">
             <h3 style="margin:0 0 10px 0">上传需求Excel</h3>
             <input id="fileDemand" type="file" accept=".xlsx,.xls" />
-            <div class="sub">默认读取第一个sheet，表头需与页面列名一致。</div>
+            <div class="sub">默认读取第一个sheet；当“按销售采购订单号匹配=开”时，需求侧销售采购订单号不能为空。</div>
           </div>
           <div class="card">
-            <h3 style="margin:0 0 10px 0">上传在途Excel</h3>
+            <h3 style="margin:0 0 10px 0">上传在途/库存Excel</h3>
             <input id="fileSupply" type="file" accept=".xlsx,.xls" />
-            <div class="sub">默认读取第一个sheet，支持两套表头（见左侧说明）。</div>
+            <div class="sub">默认读取第一个sheet；库存状态仅接受“在库/在途”。若整列留空则忽略该列；若仅部分留空则自动跳过空值行。</div>
           </div>
         </div>
-        <div class="footer-note">如果你看见“XLSX未定义”，说明没放本地 xlsx.full.min.js；用TSV下载也能导入。</div>
       </div>
     </div>
 
     <div class="card" style="margin-top:14px">
       <div class="row" style="justify-content:space-between">
-        <h3 style="margin:0">裂变输出（导入用，=完整在途）</h3>
+        <h3 style="margin:0">裂变输出（导入用）</h3>
         <div class="row">
           <button class="btn" id="btnDownloadTSV" disabled>下载TSV</button>
           <button class="btn primary" id="btnDownloadXLSX" disabled>下载XLSX</button>
         </div>
       </div>
-      <div class="sub">输出列：销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
+      <div class="sub">输出列：库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
       <div class="hr"></div>
       <div id="outWrap" class="sub">还没有生成结果。</div>
     </div>
@@ -210,20 +207,43 @@
     </div>
 
     <div class="card" style="margin-top:14px">
-      <h3 style="margin:0">在途剩余（对账用）</h3>
-      <div class="sub">这张表会和“裂变输出”里【站点=未分配站点名】的数量一致（只是给你对账）。</div>
+      <h3 style="margin:0">在途/库存剩余（对账用）</h3>
+      <div class="sub">这张表会和“裂变输出”里【站点=未分配站点名】的数量一致（对账用）。</div>
       <div class="hr"></div>
       <div id="leftWrap" class="sub">还没有生成结果。</div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3 style="margin:0">数据质量报告</h3>
+      <div class="sub">展示被跳过/被忽略的数据行，便于回溯。</div>
+      <div class="hr"></div>
+      <div id="qualityWrap" class="sub">还没有生成结果。</div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3 style="margin:0">更新日志</h3>
+      <div class="sub">每次功能调整都会更新版本和记录。</div>
+      <div class="hr"></div>
+      <div class="sub">
+        <div><strong>v4.3（2026-02-06）</strong>：清理更新日志，移除字体需求相关记录。</div>
+        <div><strong>v4.2（2026-02-06）</strong>：优化导出参数兼容性。</div>
+        <div><strong>v4.1（2026-02-06）</strong>：新增生成前二次审核（订单号匹配、同规格裂变），并完善自动开关提醒逻辑。</div>
+        <div><strong>v4.0（2026-02-06）</strong>：库存状态移至最左列；库存状态整列留空可忽略、部分留空自动跳过；新增数据质量报告；裂变输出导出新增“映射”列。</div>
+        <div><strong>v3.0</strong>：基础分货裂变流程与导入导出能力。</div>
+      </div>
     </div>
   </div>
 
 <script>
-  const DEMAND_COLS = ["型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
-  const SUPPLY_COLS = ["销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
-  const OUT_COLS    = ["销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
+  const APP_VERSION = "4.3";
+  const DEMAND_COLS = ["销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
+  const SUPPLY_COLS = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
+  const OUT_COLS    = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
 
   const $ = (id)=>document.getElementById(id);
-  const state = { outRows: [], unmetRows: [], leftRows: [] };
+  const state = { outRows: [], unmetRows: [], leftRows: [], qualityRows: [] };
+  document.title = `在途分货裂变 ${APP_VERSION}`;
+  if($("appVersion")) $("appVersion").textContent = `v${APP_VERSION}`;
 
   function setStatus(msg, ok=true){
     const el = $("status");
@@ -237,13 +257,11 @@
     const n = Number(String(v ?? "").replace(/,/g,"").trim());
     return Number.isFinite(n) ? n : 0;
   }
-  // ✅数量统一整数（不允许出现小数）
   function toInt(v){
     return Math.max(0, Math.floor(toNum(v)));
   }
-  // ✅箱规取整可开关：enabled=false 时不按箱规倍数，但仍返回整数
   function roundUpBox(qty, box, enabled=true){
-    const q = Math.max(0, Math.ceil(toNum(qty))); // 先保证整数
+    const q = Math.max(0, Math.ceil(toNum(qty)));
     if(!enabled) return q;
     const b = toInt(box);
     if(b <= 0) return q;
@@ -256,11 +274,15 @@
     if(s.includes("美")) return "美";
     if(s.includes("欧")) return "欧";
     if(s.includes("英")) return "英";
-    return s; // 例如 “无”
+    return s;
   }
-  // ✅型号大小写归一：AnywiseW1Lite vs ANYWISEW1LITE 不再匹配失败
   function normKey(v){
     return String(v ?? "").trim().toUpperCase();
+  }
+  function normStockStatus(v){
+    const s = String(v ?? "").trim();
+    if(s !== "在库" && s !== "在途") return "";
+    return s;
   }
 
   function buildGrid(tableId, columns, initialRows=50){
@@ -420,58 +442,171 @@
     $("btnDownloadXLSX").disabled = !enabled;
   }
   async function readExcelFile(file){
-    if(!window.XLSX) throw new Error("XLSX库未加载：请把 xlsx.full.min.js 放到 html 同目录。");
+    if(!window.XLSX) throw new Error("XLSX库未加载：无法导出XLSX（可用TSV下载）。");
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, {type:"array"});
     const ws = wb.Sheets[wb.SheetNames[0]];
     return XLSX.utils.sheet_to_json(ws, {defval:""});
   }
+  function applySheetFont(ws, fontName, fontSize){
+    if(!ws || !ws["!ref"] || !window.XLSX?.utils) return;
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for(let r = range.s.r; r <= range.e.r; r++){
+      for(let c = range.s.c; c <= range.e.c; c++){
+        const addr = XLSX.utils.encode_cell({r, c});
+        const cell = ws[addr];
+        if(!cell) continue;
+        const s = cell.s || {};
+        const f = s.font || {};
+        cell.s = { ...s, font: { ...f, name: fontName, sz: fontSize } };
+      }
+    }
+  }
+  function applyWorkbookFont(wb, fontName, fontSize){
+    if(!wb || !wb.SheetNames || !wb.Sheets) return;
+    for(const name of wb.SheetNames){
+      applySheetFont(wb.Sheets[name], fontName, fontSize);
+    }
+  }
+  function reviewOrderMatchSwitch(demRows, supRows, currentEnabled){
+    const demandOrders = demRows.map(r => String(r["销售采购订单号"] ?? "").trim());
+    const supplyOrders = supRows.map(r => String(r["销售采购订单号"] ?? "").trim());
+    const demandHasBlank = demandOrders.some(v => v === "");
+    const supplyHasBlank = supplyOrders.some(v => v === "");
 
+    // 任一侧存在空值：自动关闭并提醒
+    if(demandHasBlank || supplyHasBlank){
+      const side = [];
+      if(demandHasBlank) side.push("需求侧");
+      if(supplyHasBlank) side.push("供给侧");
+      alert(`检测到${side.join("和")}“销售采购订单号”存在空值。\n本次已自动关闭“按销售采购订单号匹配”，并按两边都不使用该字段处理。`);
+      return false;
+    }
+
+    const currentText = currentEnabled ? "开" : "关";
+    const enable = confirm(
+      `检测到需求侧与供给侧“销售采购订单号”均已填写。\n当前“按销售采购订单号匹配”=${currentText}。\n点击“确定”=开启匹配；点击“取消”=关闭匹配。`
+    );
+    return enable;
+  }
+  function reviewSpecStrictSwitch(currentEnabled){
+    const currentText = currentEnabled ? "开" : "关";
+    const enable = confirm(
+      `二次审核：是否开启“只允许同规格裂变”？\n当前状态=${currentText}。\n点击“确定”=开启；点击“取消”=关闭。`
+    );
+    return enable;
+  }
+  function mapSiteForExport(site){
+    const raw = String(site ?? "").trim();
+    const key = raw.toUpperCase();
+    const oneThreeSites = new Set(["DE","ES","IT","FR","US","UK","MX","CA"]);
+    if(oneThreeSites.has(key)) return `自营一三部${key}`;
+    if(key === "JP") return "自营二七部JP";
+    if(raw === "未分配/留库存") return "自营一三部JP";
+    return raw;
+  }
+
+  function toPriorityValue(raw){
+    if(raw == null || raw === "") return Number.POSITIVE_INFINITY;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+  }
   function sortByPriority(rows, priorityDir){
     const asc = priorityDir === "asc";
     return [...rows].sort((a,b)=>{
-      const ap = (a.__prio==null || a.__prio==="") ? Number.POSITIVE_INFINITY : Number(a.__prio);
-      const bp = (b.__prio==null || b.__prio==="") ? Number.POSITIVE_INFINITY : Number(b.__prio);
-      return asc ? (ap-bp) : (bp-ap);
+      const ap = toPriorityValue(a.__prio);
+      const bp = toPriorityValue(b.__prio);
+      if(ap !== bp) return asc ? (ap - bp) : (bp - ap);
+      return (a.__idx ?? 0) - (b.__idx ?? 0);
     });
   }
 
-  // ✅兼容两套供给表头：旧(销售型号/规格/需求数量) & 新(自营销售型号/充电器版本/可用量)
+  function validateSupplyRows(supplyRows){
+    const hasAnyStatus = supplyRows.some(r => String(r["库存状态"] ?? "").trim() !== "");
+    const ignoreStatus = !hasAnyStatus;
+    const validRows = [];
+    const skippedRows = [];
+
+    for(let i=0;i<supplyRows.length;i++){
+      const r = supplyRows[i];
+      const raw = String(r["库存状态"] ?? "").trim();
+      if(!raw){
+        if(ignoreStatus){
+          validRows.push(r);
+        }else{
+          skippedRows.push(i + 1);
+        }
+        continue;
+      }
+      if(raw !== "在库" && raw !== "在途") throw new Error(`在途/库存明细：第${i+1}行“库存状态”只能是“在库”或“在途”，当前为“${raw}”。`);
+      validRows.push(r);
+    }
+    return { validRows, skippedRows, ignoreStatus };
+  }
+  function validateDemandRows(demandRows, orderMatchEnabled){
+    if(!orderMatchEnabled) return;
+    for(let i=0;i<demandRows.length;i++){
+      const r = demandRows[i];
+      const raw = String(r["销售采购订单号"] ?? "").trim();
+      if(!raw) throw new Error(`需求明细：第${i+1}行“销售采购订单号”为空（开关=开时必须有值）。`);
+    }
+  }
+
   function makeSupplyPool(supplyRows){
     return supplyRows.map((r, idx)=>({
       __idx: idx,
-      order: (r["销售采购订单号"] ?? r["仓库名称"] ?? "").trim(),
-      mat:   (r["物料编码"] ?? "").trim(),
-      model: normKey(r["销售型号"] ?? r["自营销售型号"] ?? ""),
-      color: (r["颜色"] ?? r["颜色简易版"] ?? "").trim(),
-      spec:  normSpec(r["规格"] ?? r["充电器版本"] ?? ""),
+      order:  (r["销售采购订单号"] ?? r["仓库名称"] ?? "").trim(),
+      mat:    (r["物料编码"] ?? "").trim(),
+      status: normStockStatus(r["库存状态"]),
+      model:  normKey(r["销售型号"] ?? r["自营销售型号"] ?? ""),
+      color:  (r["颜色"] ?? r["颜色简易版"] ?? "").trim(),
+      spec:   normSpec(r["规格"] ?? r["充电器版本"] ?? ""),
       qtyLeft: toInt(r["求和项:需求数量"] ?? r["求和项:可用量(主单位)"] ?? 0),
-    })).filter(x => x.order || x.mat || x.model || x.color || x.spec || x.qtyLeft);
+    })).filter(x => x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
   }
 
-  function consumeFromSupply(pool, matchFn, qtyNeed){
+  // ✅同一匹配条件下：先吃“在库”，再吃“在途”；若忽略库存状态则直接按顺序吃
+  function consumeFromSupply(pool, matchFn, qtyNeed, ignoreStatus=false){
     const allocs = [];
-    let need = toInt(qtyNeed); // ✅强制整数
+    let need = toInt(qtyNeed);
     if(need <= 0) return allocs;
 
-    for(const s of pool){
-      if(need <= 0) break;
-      if(s.qtyLeft <= 0) continue;
-      if(!matchFn(s)) continue;
-
-      const take = Math.min(need, s.qtyLeft);
-      s.qtyLeft -= take;
-      need -= take;
-
-      allocs.push({ order:s.order, mat:s.mat, model:s.model, color:s.color, spec:s.spec, qty:take });
+    if(ignoreStatus){
+      for(const s of pool){
+        if(need <= 0) break;
+        if(s.qtyLeft <= 0) continue;
+        if(!matchFn(s)) continue;
+        const take = Math.min(need, s.qtyLeft);
+        s.qtyLeft -= take;
+        need -= take;
+        allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+      }
+      return allocs;
     }
+
+    function pass(wantStatus){
+      for(const s of pool){
+        if(need <= 0) break;
+        if(s.qtyLeft <= 0) continue;
+        if(s.status !== wantStatus) continue;
+        if(!matchFn(s)) continue;
+
+        const take = Math.min(need, s.qtyLeft);
+        s.qtyLeft -= take;
+        need -= take;
+
+        allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+      }
+    }
+    pass("在库");
+    pass("在途");
     return allocs;
   }
 
   function consolidateOut(rows){
     const m = new Map();
     for(const r of rows){
-      const k = [r["销售采购订单号"], r["物料编码"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
+      const k = [r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
       const cur = m.get(k) || { ...r, "需求数量": 0 };
       cur["需求数量"] = toInt(cur["需求数量"]) + toInt(r["需求数量"]);
       m.set(k, cur);
@@ -480,27 +615,64 @@
   }
 
   function runAllocation(demandRowsRaw, supplyRowsRaw, opts){
-    const {priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled} = opts;
+    const {priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled} = opts;
     const siteName = (unassignedSite || "未分配/留库存").trim() || "未分配/留库存";
+    const quality = [];
 
-    const demand = demandRowsRaw.map((r, idx)=>({
-      __idx: idx,
-      model: normKey(r["型号"]),
-      color: (r["颜色"]??"").trim(),
-      site: (r["站点（平台）"]??"").trim(),
-      demandQty: toInt(r["SI数量"]),
-      spec: normSpec(r["需求规格"]),
-      platform: (r["平台"]??"").trim(), // 亚马逊 / 小平台
-      box: toInt(r["箱规信息"]),
-      __prio: (r["优先级"]??"").trim(),
-    })).filter(d => d.model && d.site && d.spec);
+    function addQuality(type, rowNo, detail){
+      quality.push({
+        "类型": type,
+        "行号": rowNo == null ? "-" : String(rowNo),
+        "说明": detail
+      });
+    }
 
-    const supplyPool = makeSupplyPool(supplyRowsRaw);
+    validateDemandRows(demandRowsRaw, orderMatchEnabled);
+    const { validRows: validSupplyRows, skippedRows, ignoreStatus } = validateSupplyRows(supplyRowsRaw);
+    if(ignoreStatus){
+      addQuality("库存状态忽略", "-", "库存状态整列为空，已忽略该列参与分配。");
+    }
+    for(const rowNo of skippedRows){
+      addQuality("跳过供给行", rowNo, "库存状态为空，已跳过。");
+    }
+
+    const demand = [];
+    for(let idx=0; idx<demandRowsRaw.length; idx++){
+      const r = demandRowsRaw[idx];
+      const d = {
+        __idx: idx,
+        order: (r["销售采购订单号"] ?? "").trim(),
+        model: normKey(r["型号"]),
+        color: (r["颜色"] ?? "").trim(),
+        site: (r["站点（平台）"] ?? "").trim(),
+        demandQty: toInt(r["SI数量"]),
+        spec: normSpec(r["需求规格"]),
+        platform: (r["平台"] ?? "").trim(),
+        box: toInt(r["箱规信息"]),
+        __prio: (r["优先级"] ?? "").trim(),
+      };
+
+      const missing = [];
+      if(!d.model) missing.push("型号为空");
+      if(!d.site) missing.push("站点（平台）为空");
+      if(!d.spec) missing.push("需求规格为空");
+      if(missing.length){
+        addQuality("跳过需求行", idx + 1, missing.join("，"));
+        continue;
+      }
+      if(d.__prio !== "" && !Number.isFinite(Number(d.__prio))){
+        addQuality("优先级修正", idx + 1, `优先级“${d.__prio}”不是数字，已按最低优先级处理。`);
+      }
+      demand.push(d);
+    }
+
+    const supplyPool = makeSupplyPool(validSupplyRows);
     const demandAlloc = new Map();
     let out = [];
 
     function addOut(site, alloc){
       out.push({
+        "库存状态": alloc.status,
         "销售采购订单号": alloc.order,
         "物料编码": alloc.mat,
         "销售型号": alloc.model,
@@ -515,8 +687,8 @@
     }
     function got(d){ return demandAlloc.get(d.__idx) || 0; }
     function miss(d){ return Math.max(0, d.demandQty - got(d)); }
+    function orderOk(s, d){ return !orderMatchEnabled || (s.order && d.order && s.order === d.order); }
 
-    // ✅分配一段数量：先同规格；若允许跨规格，则“日”优先吃“美”，然后再吃任意规格
     function allocQtyForDemand(d, qtyPlan, allowCrossSpec){
       let need = toInt(qtyPlan);
       if(need <= 0) return 0;
@@ -524,8 +696,9 @@
       // 1) 同规格优先
       const strictAllocs = consumeFromSupply(
         supplyPool,
-        (s)=> s.model===d.model && s.color===d.color && s.spec===d.spec,
-        need
+        (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color && s.spec===d.spec,
+        need,
+        ignoreStatus
       );
       for(const a of strictAllocs){ addOut(d.site, a); bump(d.__idx, a.qty); need -= a.qty; }
       if(need <= 0) return toInt(qtyPlan);
@@ -536,53 +709,84 @@
       if(normSpec(d.spec) === "日"){
         const usFirst = consumeFromSupply(
           supplyPool,
-          (s)=> s.model===d.model && s.color===d.color && normSpec(s.spec)==="美",
-          need
+          (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color && normSpec(s.spec)==="美",
+          need,
+          ignoreStatus
         );
         for(const a of usFirst){ addOut(d.site, a); bump(d.__idx, a.qty); need -= a.qty; }
         if(need <= 0) return toInt(qtyPlan);
       }
 
-      // 3) 其他规格兜底（同型号同颜色任意规格）
+      // 3) 任意规格兜底（同型号同颜色）
       const anySpec = consumeFromSupply(
         supplyPool,
-        (s)=> s.model===d.model && s.color===d.color,
-        need
+        (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color,
+        need,
+        ignoreStatus
       );
       for(const a of anySpec){ addOut(d.site, a); bump(d.__idx, a.qty); need -= a.qty; }
       return toInt(qtyPlan) - need;
     }
 
-    function allocSmallPhase(smallSorted){
-      // 小平台：一次性全额满足（不做 60/40）
-      for(const d of smallSorted){
-        const need = miss(d);
-        if(need <= 0) continue;
-        allocQtyForDemand(d, need, !specStrict);
-      }
+    function allocRegularDemand(d){
+      const need = miss(d);
+      if(need <= 0) return;
+      allocQtyForDemand(d, need, !specStrict);
+    }
 
-      // 小平台凑箱规补齐：按【型号+规格】汇总到箱规倍数；补齐量写入未分配（避免污染站点）
+    function allocAmazonOnce(d, plannedQty){
+      const targetTotal = roundUpBox(d.demandQty, d.box, boxEnabled);
+      const remain = toInt(targetTotal - got(d));
+      if(remain <= 0) return;
+
+      const planRounded = roundUpBox(plannedQty, d.box, boxEnabled);
+      const plan = Math.min(toInt(planRounded), remain);
+      if(plan <= 0) return;
+
+      allocQtyForDemand(d, plan, !specStrict);
+    }
+
+    // 小平台凑箱规补齐：按【订单号(可选)+型号+颜色+规格】分组，避免跨颜色/跨订单挪用
+    function topUpSmallBox(smallSorted){
       const groupMap = new Map();
       for(const d of smallSorted){
-        const key = d.model + "||" + d.spec;
-        if(!groupMap.has(key)) groupMap.set(key, { box:d.box, rows:[] });
-        groupMap.get(key).rows.push(d);
+        const key = orderMatchEnabled
+          ? [d.order, d.model, d.color, d.spec].join("||")
+          : [d.model, d.color, d.spec].join("||");
+        if(!groupMap.has(key)) groupMap.set(key, { rows: [], boxSet: new Set() });
+        const g = groupMap.get(key);
+        g.rows.push(d);
+        if(d.box > 0) g.boxSet.add(d.box);
       }
 
       for(const [key, g] of groupMap.entries()){
-        const [model, spec] = key.split("||");
+        const parts = key.split("||");
+        const order = orderMatchEnabled ? parts[0] : "";
+        const model = orderMatchEnabled ? parts[1] : parts[0];
+        const color = orderMatchEnabled ? parts[2] : parts[1];
+        const spec  = orderMatchEnabled ? parts[3] : parts[2];
+
+        const boxValues = Array.from(g.boxSet.values()).sort((a,b)=>a-b);
+        const box = boxValues.length ? boxValues[boxValues.length - 1] : 0;
+        if(boxValues.length > 1){
+          const label = orderMatchEnabled ? `[${order}]${model}/${color}/${spec}` : `${model}/${color}/${spec}`;
+          addQuality("箱规不一致", "-", `小平台分组${label}存在多种箱规(${boxValues.join("/")})，已按最大箱规${box}取整。`);
+        }
+
         const total = g.rows.reduce((a,d)=>a + got(d), 0);
-        const target = roundUpBox(total, g.box, boxEnabled);
-        let needExtra = toInt(target - total);
+        const target = roundUpBox(total, box, boxEnabled);
+        const needExtra = toInt(target - total);
         if(needExtra <= 0) continue;
 
         const allocs = consumeFromSupply(
           supplyPool,
-          (s)=> s.model===model && s.spec===spec,
-          needExtra
+          (s)=> (orderMatchEnabled ? (s.order===order) : true) && s.model===model && s.color===color && s.spec===spec,
+          needExtra,
+          ignoreStatus
         );
         for(const a of allocs){
           out.push({
+            "库存状态": a.status,
             "销售采购订单号": a.order,
             "物料编码": a.mat,
             "销售型号": a.model,
@@ -591,27 +795,16 @@
             "规格": a.spec,
             "需求数量": a.qty
           });
-          needExtra -= a.qty;
         }
       }
     }
 
+    function allocSmallPhase(smallSorted){
+      for(const d of smallSorted){ allocRegularDemand(d); }
+      topUpSmallBox(smallSorted);
+    }
+
     function allocAmazonPhase(amazonSorted){
-      // ✅亚马逊：60%一轮（按优先级），再40%一轮（按优先级）
-      // ✅每轮：先同规格；同规格不够且 specStrict=关 时允许跨规格（日优先吃美）
-      // ✅防止 32→40：每行有整行目标(可按箱规)，每轮计划量按“剩余额度”封顶
-      function allocAmazonOnce(d, plannedQty){
-        const targetTotal = roundUpBox(d.demandQty, d.box, boxEnabled);
-        const remain = toInt(targetTotal - got(d));
-        if(remain <= 0) return;
-
-        const planRounded = roundUpBox(plannedQty, d.box, boxEnabled);
-        const plan = Math.min(toInt(planRounded), remain);
-        if(plan <= 0) return;
-
-        allocQtyForDemand(d, plan, !specStrict);
-      }
-
       if(amazonMode === "100"){
         for(const d of amazonSorted){ allocAmazonOnce(d, d.demandQty); }
         return;
@@ -621,11 +814,7 @@
     }
 
     function allocOtherPhase(otherSorted){
-      for(const d of otherSorted){
-        const need = miss(d);
-        if(need <= 0) continue;
-        allocQtyForDemand(d, need, !specStrict);
-      }
+      for(const d of otherSorted){ allocRegularDemand(d); }
     }
 
     const small  = demand.filter(d => d.platform === "小平台");
@@ -641,9 +830,22 @@
       allocAmazonPhase(amazonSorted);
       allocOtherPhase(otherSorted);
     }else{
-      allocSmallPhase(smallSorted);
-      allocAmazonPhase(amazonSorted);
-      allocOtherPhase(otherSorted);
+      const globalSorted = sortByPriority(demand, priorityDir);
+      if(amazonMode === "100"){
+        for(const d of globalSorted){
+          if(d.platform === "亚马逊") allocAmazonOnce(d, d.demandQty);
+          else allocRegularDemand(d);
+        }
+      }else{
+        for(const d of globalSorted){
+          if(d.platform === "亚马逊") allocAmazonOnce(d, Math.ceil(d.demandQty * 0.6));
+          else allocRegularDemand(d);
+        }
+        for(const d of globalSorted){
+          if(d.platform === "亚马逊") allocAmazonOnce(d, Math.ceil(d.demandQty * 0.4));
+        }
+      }
+      topUpSmallBox(smallSorted);
     }
 
     const unmetFinal = [];
@@ -651,6 +853,7 @@
       const m = miss(d);
       if(m > 0){
         unmetFinal.push({
+          "销售采购订单号": d.order,
           "型号": d.model, "颜色": d.color, "站点": d.site, "规格": d.spec, "平台": d.platform,
           "原需求": d.demandQty, "已分配": got(d), "仍缺口": m, "优先级": d.__prio, "箱规": d.box
         });
@@ -658,6 +861,7 @@
     }
 
     const left = supplyPool.filter(s => s.qtyLeft > 0).map(s => ({
+      "库存状态": s.status,
       "销售采购订单号": s.order,
       "物料编码": s.mat,
       "销售型号": s.model,
@@ -666,10 +870,11 @@
       "剩余数量": s.qtyLeft
     }));
 
-    // 把剩余追加进裂变输出，保证“裂变输出=完整库存/在途总量”
+    // 剩余追加进裂变输出（对账：总量不丢）
     for(const s of supplyPool){
       if(s.qtyLeft > 0){
         out.push({
+          "库存状态": s.status,
           "销售采购订单号": s.order,
           "物料编码": s.mat,
           "销售型号": s.model,
@@ -685,7 +890,7 @@
       out = consolidateOut(out);
     }
 
-    return { out, unmet: unmetFinal, left };
+    return { out, unmet: unmetFinal, left, quality };
   }
 
   document.querySelectorAll(".tab").forEach(t=>{
@@ -713,29 +918,34 @@
     $("outWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
     $("unmetWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
     $("leftWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
+    $("qualityWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
+    state.outRows = [];
+    state.unmetRows = [];
+    state.leftRows = [];
+    state.qualityRows = [];
     enableDownloads(false);
     setStatus("已清空。", true);
   });
 
   $("btnLoadSample").addEventListener("click", ()=>{
     fillGridFromObjects("gridDemand", DEMAND_COLS, [
-      {"型号":"AP12","颜色":"蓝色","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
-      {"型号":"AP12","颜色":"蓝色","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
-      {"型号":"AP12","颜色":"蓝色","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
-      {"型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
+      {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
+      {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
+      {"销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
+      {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
     ]);
     fillGridFromObjects("gridSupply", SUPPLY_COLS, [
-      {"销售采购订单号":"PO1","物料编码":"M1","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
-      {"销售采购订单号":"PO2","物料编码":"M2","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
-      {"销售采购订单号":"PO3","物料编码":"M3","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
+      {"销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
+      {"销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
+      {"销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
     ]);
-    setStatus("已载入示例：箱规取整可开关；specStrict关时日缺口可优先吃美。", true);
+    setStatus("已载入示例：同匹配条件先分在库再分在途；订单号匹配开关可控。", true);
   });
 
   async function loadExcelToGrid(){
     const fD = $("fileDemand").files[0];
     const fS = $("fileSupply").files[0];
-    if(!fD || !fS) throw new Error("请同时上传需求Excel和在途Excel。");
+    if(!fD || !fS) throw new Error("请同时上传需求Excel和在途/库存Excel。");
 
     const demJson = await readExcelFile(fD);
     const supJson = await readExcelFile(fS);
@@ -743,7 +953,6 @@
     const dem = demJson.map(r=>{ const o={}; DEMAND_COLS.forEach(c=>o[c]=r[c]??""); return o; })
                        .filter(r=>DEMAND_COLS.some(c=>String(r[c]??"").trim()!==""));
 
-    // 供给表头：保留“新表头字段”到对象里，makeSupplyPool 会识别
     const sup = supJson.map(r=>{
       const o = {};
       SUPPLY_COLS.forEach(c=>o[c]=r[c]??"");
@@ -758,17 +967,12 @@
       o["颜色"] = r["颜色"] ?? o["颜色"] ?? "";
       o["销售采购订单号"] = r["销售采购订单号"] ?? o["销售采购订单号"] ?? "";
       o["物料编码"] = r["物料编码"] ?? o["物料编码"] ?? "";
+      o["库存状态"] = r["库存状态"] ?? o["库存状态"] ?? "";
       return o;
-    }).filter(r=>{
-      return Object.keys(r).some(k=>String(r[k]??"").trim()!=="");
-    });
+    }).filter(r=>Object.keys(r).some(k=>String(r[k]??"").trim()!==""));
 
     fillGridFromObjects("gridDemand", DEMAND_COLS, dem);
-
-    // 只把页面6列回填到页面表格（上传模式实际用的是 sup 原对象）
-    fillGridFromObjects("gridSupply", SUPPLY_COLS, sup.map(r=>{
-      const o={}; SUPPLY_COLS.forEach(c=>o[c]=r[c]??""); return o;
-    }));
+    fillGridFromObjects("gridSupply", SUPPLY_COLS, sup.map(r=>{ const o={}; SUPPLY_COLS.forEach(c=>o[c]=r[c]??""); return o; }));
     return {dem, sup};
   }
 
@@ -779,8 +983,9 @@
       const priorityDir = $("priorityDir").value;
       const amazonMode = $("amazonMode").value;
       const smallFirst = $("smallFirst").value === "1";
-      const specStrict = $("specStrict").value === "1";
+      let specStrict = $("specStrict").value === "1";
       const boxEnabled = $("boxEnabled").value === "1";
+      let orderMatchEnabled = $("orderMatchEnabled").value === "1";
       const unassignedSite = ($("unassignedSite").value || "未分配/留库存").trim();
       const mergeOut = $("mergeOut").value === "1";
 
@@ -800,30 +1005,39 @@
       if(demRows.length===0) throw new Error("需求明细为空。");
       if(supRows.length===0) throw new Error("在途/库存明细为空。");
 
-      const {out, unmet, left} = runAllocation(demRows, supRows, {
-        priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled
+      orderMatchEnabled = reviewOrderMatchSwitch(demRows, supRows, orderMatchEnabled);
+      $("orderMatchEnabled").value = orderMatchEnabled ? "1" : "0";
+
+      specStrict = reviewSpecStrictSwitch(specStrict);
+      $("specStrict").value = specStrict ? "1" : "0";
+
+      const {out, unmet, left, quality} = runAllocation(demRows, supRows, {
+        priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled
       });
 
       state.outRows = out;
       state.unmetRows = unmet;
       state.leftRows = left;
+      state.qualityRows = quality;
 
-      renderTable("outWrap", out.length? out : [{"提示":"没有产生任何分配（可能在途为0或匹配不到）"}]);
+      renderTable("outWrap", out.length? out : [{"提示":"没有产生任何分配（请检查：型号/颜色/规格是否能匹配到供给；若开启订单号匹配，需求侧与供给侧订单号需一致）。"}]);
       renderTable("unmetWrap", unmet.length? unmet : [{"提示":"没有未满足需求"}]);
-      renderTable("leftWrap", left.length? left : [{"提示":"没有在途剩余"}]);
+      renderTable("leftWrap", left.length? left : [{"提示":"没有剩余"}]);
+      renderTable("qualityWrap", quality.length ? quality : [{"提示":"无质量告警"}]);
 
       enableDownloads(true);
 
       const outSum = out.reduce((a,r)=>a + toInt(r["需求数量"]), 0);
       const leftSum = left.reduce((a,r)=>a + toInt(r["剩余数量"]), 0);
-      setStatus(`完成：裂变输出${out.length}行(合计${outSum})；未满足${unmet.length}行；在途剩余${left.length}行(合计${leftSum})。`, true);
+      setStatus(`完成：裂变输出${out.length}行(合计${outSum})；未满足${unmet.length}行；剩余${left.length}行(合计${leftSum})；质量提示${quality.length}条。`, true);
 
     }catch(e){
       console.error(e);
       setStatus("失败：" + (e?.message || String(e)), false);
-      $("outWrap").innerHTML = '<div class="sub warn">生成失败：检查列名是否一致、平台是否写“亚马逊/小平台”、规格是否一致（欧/英/日/美/无），以及在途数量列是否为数字。</div>';
+      $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态仅接受“在库/在途”（整列留空会忽略该列，部分留空会跳过空值行）；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
       $("unmetWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
       $("leftWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
+      $("qualityWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
       enableDownloads(false);
     }
   });
@@ -831,26 +1045,33 @@
   $("btnDownloadTSV").addEventListener("click", ()=>{
     if(!state.outRows.length) return;
     const tsv = rowsToTSV(state.outRows, OUT_COLS);
-    downloadText("在途分货裂变_裂变输出.tsv", tsv, "text/tab-separated-values;charset=utf-8");
+    downloadText(`在途分货裂变_v${APP_VERSION}_裂变输出.tsv`, tsv, "text/tab-separated-values;charset=utf-8");
   });
 
   $("btnDownloadXLSX").addEventListener("click", ()=>{
     if(!state.outRows.length) return;
     if(!window.XLSX){
-      setStatus("XLSX库未加载：请把 xlsx.full.min.js 放到 html 同目录；或用TSV下载。", false);
+      setStatus("XLSX库未加载：无法导出XLSX（可用TSV下载）。", false);
       return;
     }
+    const outRowsForXlsx = state.outRows.map(r => ({ ...r, "映射": mapSiteForExport(r["站点"]) }));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.outRows), "裂变输出");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outRowsForXlsx), "裂变输出");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.unmetRows), "未满足需求");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.leftRows), "在途剩余");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.leftRows), "在途库存剩余");
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(state.qualityRows.length ? state.qualityRows : [{"提示":"无质量告警"}]),
+      "数据质量报告"
+    );
+    applyWorkbookFont(wb, "微软雅黑", 10);
 
-    const buf = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+    const buf = XLSX.write(wb, { bookType:"xlsx", type:"array", cellStyles:true });
     const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "在途分货裂变_结果.xlsx";
+    a.download = `在途分货裂变_v${APP_VERSION}_结果.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -859,4 +1080,3 @@
 </script>
 </body>
 </html>
-
