@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>在途分货裂变 4.3</title>
+  <title>在途分货裂变 4.5</title>
 
   <style>
     :root{
@@ -48,6 +48,13 @@
     table.sheet tbody tr:last-child td{border-bottom:none}
     .cell{padding:9px 10px;min-height:18px;font-size:13px;outline:none;white-space:pre-wrap;word-break:break-word}
     .cell:focus{box-shadow: inset 0 0 0 2px rgba(51,112,255,.55);background:#F7F9FF}
+    .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal-panel{width:min(580px,100%);background:#fff;border:1px solid #e8eaf0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24);padding:16px 16px 14px}
+    .modal-kicker{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef3ff;color:#2b5cff;border:1px solid rgba(43,92,255,.2)}
+    .modal-title{margin:10px 0 6px 0;font-size:19px;line-height:1.3}
+    .modal-main{font-size:14px;line-height:1.7;color:#1f2329}
+    .modal-sub{margin-top:8px;padding:10px 12px;border-radius:10px;background:#f7f8fb;border:1px solid #eceff5;color:#495265;font-size:13px;line-height:1.6}
+    .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
   </style>
 
   <!-- 可选：用于导出XLSX（未引入也能用TSV下载） -->
@@ -56,7 +63,7 @@
 
 <body>
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v4.3</span></div>
+    <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v4.8</span></div>
     <div class="actions">
       <button class="btn" id="btnLoadSample">载入示例</button>
       <button class="btn danger" id="btnClearAll">清空全部</button>
@@ -96,12 +103,12 @@
             <label>只允许同规格裂变</label>
             <select id="specStrict">
               <option value="1" selected>开（禁止跨规格补缺）</option>
-              <option value="0">关（允许跨规格补缺：日缺口优先吃美结余）</option>
+              <option value="0">关（同规格先跑完后再跨规格补缺：日缺口优先吃美结余）</option>
             </select>
           </div>
 
           <div class="field">
-            <label>箱规取整</label>
+            <label>箱规取整（亚马逊60%阶段）</label>
             <select id="boxEnabled">
               <option value="1">开（按箱规倍数向上取整）</option>
               <option value="0" selected>关（不按箱规；仍保证整数）</option>
@@ -225,6 +232,11 @@
       <div class="sub">每次功能调整都会更新版本和记录。</div>
       <div class="hr"></div>
       <div class="sub">
+        <div><strong>v4.8（2026-02-17）</strong>：按业务口径微调跨规格规则：仅保留“美规结余优先给日规缺口”，不再额外保护日规库存（美规无结余时按正常优先级分配）。</div>
+        <div><strong>v4.7（2026-02-17）</strong>：跨规格互补新增全局保护：同型号同颜色（及同订单号）下，只要仍有日规缺口，非日规不会先占用美规结余，优先留给日规补缺。</div>
+        <div><strong>v4.6（2026-02-17）</strong>：修正亚马逊6/4分配逻辑：同型号+颜色+规格先跑完同规格（60%后40%）再跨规格互补；60%按箱规规则处理、40%不按箱规；小平台不再做箱规补齐。</div>
+        <div><strong>v4.5（2026-02-06）</strong>：重做生成前防呆弹窗样式与文案，替换原生alert/confirm为统一审核弹窗。</div>
+        <div><strong>v4.4（2026-02-06）</strong>：修复跨规格互补时日规优先级问题，先保障同型号同颜色（日规）缺口，再允许其他规格占用日规库存。</div>
         <div><strong>v4.3（2026-02-06）</strong>：清理更新日志，移除字体需求相关记录。</div>
         <div><strong>v4.2（2026-02-06）</strong>：优化导出参数兼容性。</div>
         <div><strong>v4.1（2026-02-06）</strong>：新增生成前二次审核（订单号匹配、同规格裂变），并完善自动开关提醒逻辑。</div>
@@ -234,8 +246,21 @@
     </div>
   </div>
 
+  <div id="reviewModalMask" class="modal-mask hidden" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+    <div class="modal-panel">
+      <span class="modal-kicker" id="reviewModalKicker">生成前审核</span>
+      <h3 id="reviewModalTitle" class="modal-title"></h3>
+      <div id="reviewModalMain" class="modal-main"></div>
+      <div id="reviewModalSub" class="modal-sub hidden"></div>
+      <div class="modal-actions">
+        <button id="reviewModalCancel" class="btn">取消</button>
+        <button id="reviewModalConfirm" class="btn primary">确认</button>
+      </div>
+    </div>
+  </div>
+
 <script>
-  const APP_VERSION = "4.3";
+  const APP_VERSION = "4.8";
   const DEMAND_COLS = ["销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
   const SUPPLY_COLS = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
   const OUT_COLS    = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
@@ -468,7 +493,72 @@
       applySheetFont(wb.Sheets[name], fontName, fontSize);
     }
   }
-  function reviewOrderMatchSwitch(demRows, supRows, currentEnabled){
+
+  const reviewModalState = {
+    resolve: null,
+    keyHandler: null
+  };
+  function closeReviewModal(result){
+    if(!reviewModalState.resolve) return;
+    const done = reviewModalState.resolve;
+    reviewModalState.resolve = null;
+    if(reviewModalState.keyHandler){
+      document.removeEventListener("keydown", reviewModalState.keyHandler);
+      reviewModalState.keyHandler = null;
+    }
+    $("reviewModalMask").classList.add("hidden");
+    document.body.style.overflow = "";
+    done(!!result);
+  }
+  function showReviewModal(opts){
+    const {
+      kicker = "生成前审核",
+      title = "请确认",
+      main = "",
+      sub = "",
+      confirmText = "确认",
+      cancelText = "取消",
+      showCancel = true
+    } = (opts || {});
+
+    if(reviewModalState.resolve) closeReviewModal(false);
+
+    $("reviewModalKicker").textContent = kicker;
+    $("reviewModalTitle").textContent = title;
+    $("reviewModalMain").innerHTML = escapeHtml(main).replace(/\n/g, "<br>");
+
+    if(sub){
+      $("reviewModalSub").classList.remove("hidden");
+      $("reviewModalSub").innerHTML = escapeHtml(sub).replace(/\n/g, "<br>");
+    }else{
+      $("reviewModalSub").classList.add("hidden");
+      $("reviewModalSub").textContent = "";
+    }
+
+    $("reviewModalConfirm").textContent = confirmText;
+    $("reviewModalCancel").textContent = cancelText;
+    $("reviewModalCancel").classList.toggle("hidden", !showCancel);
+
+    $("reviewModalMask").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    setTimeout(()=>$("reviewModalConfirm").focus(), 0);
+
+    return new Promise((resolve)=>{
+      reviewModalState.resolve = resolve;
+      reviewModalState.keyHandler = (e)=>{
+        if(e.key === "Escape") closeReviewModal(false);
+        if(e.key === "Enter") closeReviewModal(true);
+      };
+      document.addEventListener("keydown", reviewModalState.keyHandler);
+    });
+  }
+  $("reviewModalMask").addEventListener("click", (e)=>{
+    if(e.target === $("reviewModalMask")) closeReviewModal(false);
+  });
+  $("reviewModalCancel").addEventListener("click", ()=>closeReviewModal(false));
+  $("reviewModalConfirm").addEventListener("click", ()=>closeReviewModal(true));
+
+  async function reviewOrderMatchSwitch(demRows, supRows, currentEnabled){
     const demandOrders = demRows.map(r => String(r["销售采购订单号"] ?? "").trim());
     const supplyOrders = supRows.map(r => String(r["销售采购订单号"] ?? "").trim());
     const demandHasBlank = demandOrders.some(v => v === "");
@@ -479,21 +569,38 @@
       const side = [];
       if(demandHasBlank) side.push("需求侧");
       if(supplyHasBlank) side.push("供给侧");
-      alert(`检测到${side.join("和")}“销售采购订单号”存在空值。\n本次已自动关闭“按销售采购订单号匹配”，并按两边都不使用该字段处理。`);
+      await showReviewModal({
+        kicker: "订单号匹配已调整",
+        title: "检测到空订单号，已自动关闭匹配",
+        main: `检测到${side.join("和")}“销售采购订单号”存在空值。`,
+        sub: "本次将不按订单号匹配，需求侧与供给侧都会忽略订单号字段。",
+        confirmText: "我知道了",
+        showCancel: false
+      });
       return false;
     }
 
-    const currentText = currentEnabled ? "开" : "关";
-    const enable = confirm(
-      `检测到需求侧与供给侧“销售采购订单号”均已填写。\n当前“按销售采购订单号匹配”=${currentText}。\n点击“确定”=开启匹配；点击“取消”=关闭匹配。`
-    );
+    const currentText = currentEnabled ? "已开启" : "已关闭";
+    const enable = await showReviewModal({
+      kicker: "订单号匹配审核",
+      title: "是否开启“按销售采购订单号匹配”",
+      main: `需求侧与供给侧订单号均已填写。\n当前状态：${currentText}`,
+      sub: "开启后只会消耗同订单号库存；关闭则忽略订单号，按型号/颜色/规格分配。",
+      confirmText: "开启匹配",
+      cancelText: "关闭匹配"
+    });
     return enable;
   }
-  function reviewSpecStrictSwitch(currentEnabled){
-    const currentText = currentEnabled ? "开" : "关";
-    const enable = confirm(
-      `二次审核：是否开启“只允许同规格裂变”？\n当前状态=${currentText}。\n点击“确定”=开启；点击“取消”=关闭。`
-    );
+  async function reviewSpecStrictSwitch(currentEnabled){
+    const currentText = currentEnabled ? "已开启" : "已关闭";
+    const enable = await showReviewModal({
+      kicker: "同规格审核",
+      title: "是否开启“只允许同规格裂变”",
+      main: `当前状态：${currentText}`,
+      sub: "开启：严格同规格分配。\n关闭：同规格先跑完（亚马逊6/4或100%）再跨规格补缺；同型号同颜色下有日规缺口时，美规结余优先留给日规。",
+      confirmText: "开启",
+      cancelText: "关闭"
+    });
     return enable;
   }
   function mapSiteForExport(site){
@@ -688,24 +795,39 @@
     function got(d){ return demandAlloc.get(d.__idx) || 0; }
     function miss(d){ return Math.max(0, d.demandQty - got(d)); }
     function orderOk(s, d){ return !orderMatchEnabled || (s.order && d.order && s.order === d.order); }
+    function hasPendingDayDemandForSupply(s){
+      for(const d of demand){
+        if(d.spec !== "日") continue;
+        if(d.model !== s.model || d.color !== s.color) continue;
+        if(orderMatchEnabled && (!s.order || !d.order || s.order !== d.order)) continue;
+        if(miss(d) > 0) return true;
+      }
+      return false;
+    }
 
-    function allocQtyForDemand(d, qtyPlan, allowCrossSpec){
+    function allocStrictForDemand(d, qtyPlan){
       let need = toInt(qtyPlan);
       if(need <= 0) return 0;
 
-      // 1) 同规格优先
       const strictAllocs = consumeFromSupply(
         supplyPool,
         (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color && s.spec===d.spec,
         need,
         ignoreStatus
       );
-      for(const a of strictAllocs){ addOut(d.site, a); bump(d.__idx, a.qty); need -= a.qty; }
-      if(need <= 0) return toInt(qtyPlan);
+      for(const a of strictAllocs){
+        addOut(d.site, a);
+        bump(d.__idx, a.qty);
+        need -= a.qty;
+      }
+      return toInt(qtyPlan) - need;
+    }
 
-      if(!allowCrossSpec) return toInt(qtyPlan) - need;
+    function allocCrossForDemand(d, qtyPlan){
+      let need = toInt(qtyPlan);
+      if(need <= 0) return 0;
 
-      // 2) 日规缺口优先吃美规
+      // 日规缺口优先吃美规
       if(normSpec(d.spec) === "日"){
         const usFirst = consumeFromSupply(
           supplyPool,
@@ -713,19 +835,43 @@
           need,
           ignoreStatus
         );
-        for(const a of usFirst){ addOut(d.site, a); bump(d.__idx, a.qty); need -= a.qty; }
+        for(const a of usFirst){
+          addOut(d.site, a);
+          bump(d.__idx, a.qty);
+          need -= a.qty;
+        }
         if(need <= 0) return toInt(qtyPlan);
       }
 
-      // 3) 任意规格兜底（同型号同颜色）
+      // 任意规格兜底（同型号同颜色）
+      // 非“日规”需求跨规格时：
+      // 若仍有日规缺口，美规结余优先留给日规补缺；
+      // 其他规格库存按正常优先级分配。
       const anySpec = consumeFromSupply(
         supplyPool,
-        (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color,
+        (s)=>{
+          if(!(orderOk(s,d) && s.model===d.model && s.color===d.color)) return false;
+          if(d.spec !== "日" && normSpec(s.spec) === "美" && hasPendingDayDemandForSupply(s)) return false;
+          return true;
+        },
         need,
         ignoreStatus
       );
-      for(const a of anySpec){ addOut(d.site, a); bump(d.__idx, a.qty); need -= a.qty; }
+      for(const a of anySpec){
+        addOut(d.site, a);
+        bump(d.__idx, a.qty);
+        need -= a.qty;
+      }
       return toInt(qtyPlan) - need;
+    }
+
+    function allocQtyForDemand(d, qtyPlan, allowCrossSpec){
+      const target = toInt(qtyPlan);
+      if(target <= 0) return 0;
+      const strictDone = allocStrictForDemand(d, target);
+      const need = Math.max(0, target - strictDone);
+      if(need <= 0 || !allowCrossSpec) return strictDone;
+      return strictDone + allocCrossForDemand(d, need);
     }
 
     function allocRegularDemand(d){
@@ -734,83 +880,79 @@
       allocQtyForDemand(d, need, !specStrict);
     }
 
-    function allocAmazonOnce(d, plannedQty){
-      const targetTotal = roundUpBox(d.demandQty, d.box, boxEnabled);
-      const remain = toInt(targetTotal - got(d));
-      if(remain <= 0) return;
+    function calcAmazon60Target(d){
+      const total = toInt(d.demandQty);
+      if(total <= 0) return 0;
 
-      const planRounded = roundUpBox(plannedQty, d.box, boxEnabled);
-      const plan = Math.min(toInt(planRounded), remain);
-      if(plan <= 0) return;
+      const raw60 = Math.ceil(total * 0.6);
+      if(!boxEnabled) return Math.min(total, raw60);
 
-      allocQtyForDemand(d, plan, !specStrict);
+      const box = toInt(d.box);
+      if(box <= 0) return Math.min(total, raw60);
+
+      // 60%小于箱规时，直接按整条需求处理（用户规则）
+      if(raw60 < box) return total;
+      return Math.min(total, roundUpBox(raw60, box, true));
     }
 
-    // 小平台凑箱规补齐：按【订单号(可选)+型号+颜色+规格】分组，避免跨颜色/跨订单挪用
-    function topUpSmallBox(smallSorted){
-      const groupMap = new Map();
-      for(const d of smallSorted){
+    function calcAmazon40Target(d){
+      const total = toInt(d.demandQty);
+      if(total <= 0) return 0;
+      return Math.max(0, total - calcAmazon60Target(d));
+    }
+
+    function allocAmazonStrictStep(d, plannedQty){
+      const remain = miss(d);
+      if(remain <= 0) return;
+      const plan = Math.min(toInt(plannedQty), remain);
+      if(plan <= 0) return;
+      allocStrictForDemand(d, plan);
+    }
+
+    function allocAmazonCrossAfterStrict(d){
+      const need = miss(d);
+      if(need <= 0) return;
+      allocCrossForDemand(d, need);
+    }
+
+    function groupAmazonBySpec(rows){
+      const groups = new Map();
+      for(const d of rows){
         const key = orderMatchEnabled
           ? [d.order, d.model, d.color, d.spec].join("||")
           : [d.model, d.color, d.spec].join("||");
-        if(!groupMap.has(key)) groupMap.set(key, { rows: [], boxSet: new Set() });
-        const g = groupMap.get(key);
-        g.rows.push(d);
-        if(d.box > 0) g.boxSet.add(d.box);
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(d);
       }
-
-      for(const [key, g] of groupMap.entries()){
-        const parts = key.split("||");
-        const order = orderMatchEnabled ? parts[0] : "";
-        const model = orderMatchEnabled ? parts[1] : parts[0];
-        const color = orderMatchEnabled ? parts[2] : parts[1];
-        const spec  = orderMatchEnabled ? parts[3] : parts[2];
-
-        const boxValues = Array.from(g.boxSet.values()).sort((a,b)=>a-b);
-        const box = boxValues.length ? boxValues[boxValues.length - 1] : 0;
-        if(boxValues.length > 1){
-          const label = orderMatchEnabled ? `[${order}]${model}/${color}/${spec}` : `${model}/${color}/${spec}`;
-          addQuality("箱规不一致", "-", `小平台分组${label}存在多种箱规(${boxValues.join("/")})，已按最大箱规${box}取整。`);
-        }
-
-        const total = g.rows.reduce((a,d)=>a + got(d), 0);
-        const target = roundUpBox(total, box, boxEnabled);
-        const needExtra = toInt(target - total);
-        if(needExtra <= 0) continue;
-
-        const allocs = consumeFromSupply(
-          supplyPool,
-          (s)=> (orderMatchEnabled ? (s.order===order) : true) && s.model===model && s.color===color && s.spec===spec,
-          needExtra,
-          ignoreStatus
-        );
-        for(const a of allocs){
-          out.push({
-            "库存状态": a.status,
-            "销售采购订单号": a.order,
-            "物料编码": a.mat,
-            "销售型号": a.model,
-            "颜色": a.color,
-            "站点": siteName,
-            "规格": a.spec,
-            "需求数量": a.qty
-          });
-        }
-      }
+      return Array.from(groups.values());
     }
 
     function allocSmallPhase(smallSorted){
       for(const d of smallSorted){ allocRegularDemand(d); }
-      topUpSmallBox(smallSorted);
     }
 
     function allocAmazonPhase(amazonSorted){
+      const groups = groupAmazonBySpec(amazonSorted);
+
       if(amazonMode === "100"){
-        for(const d of amazonSorted){ allocAmazonOnce(d, d.demandQty); }
-        return;
+        for(const g of groups){
+          for(const d of g){ allocAmazonStrictStep(d, d.demandQty); }
+        }
+      }else{
+        for(const g of groups){
+          for(const d of g){ allocAmazonStrictStep(d, calcAmazon60Target(d)); }
+        }
+        for(const g of groups){
+          for(const d of g){ allocAmazonStrictStep(d, calcAmazon40Target(d)); }
+        }
       }
-      for(const d of amazonSorted){ allocAmazonOnce(d, Math.ceil(d.demandQty * 0.6)); }
-      for(const d of amazonSorted){ allocAmazonOnce(d, Math.ceil(d.demandQty * 0.4)); }
+
+      // 同规格(60%+40%或100%)跑完后，才允许跨规格互补
+      if(!specStrict){
+        for(const g of groups){
+          for(const d of g){ allocAmazonCrossAfterStrict(d); }
+        }
+      }
     }
 
     function allocOtherPhase(otherSorted){
@@ -833,19 +975,32 @@
       const globalSorted = sortByPriority(demand, priorityDir);
       if(amazonMode === "100"){
         for(const d of globalSorted){
-          if(d.platform === "亚马逊") allocAmazonOnce(d, d.demandQty);
+          if(d.platform === "亚马逊") allocAmazonStrictStep(d, d.demandQty);
           else allocRegularDemand(d);
+        }
+        if(!specStrict){
+          const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
+          const groups = groupAmazonBySpec(globalAmazon);
+          for(const g of groups){
+            for(const d of g){ allocAmazonCrossAfterStrict(d); }
+          }
         }
       }else{
         for(const d of globalSorted){
-          if(d.platform === "亚马逊") allocAmazonOnce(d, Math.ceil(d.demandQty * 0.6));
+          if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon60Target(d));
           else allocRegularDemand(d);
         }
         for(const d of globalSorted){
-          if(d.platform === "亚马逊") allocAmazonOnce(d, Math.ceil(d.demandQty * 0.4));
+          if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon40Target(d));
+        }
+        if(!specStrict){
+          const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
+          const groups = groupAmazonBySpec(globalAmazon);
+          for(const g of groups){
+            for(const d of g){ allocAmazonCrossAfterStrict(d); }
+          }
         }
       }
-      topUpSmallBox(smallSorted);
     }
 
     const unmetFinal = [];
@@ -1005,10 +1160,10 @@
       if(demRows.length===0) throw new Error("需求明细为空。");
       if(supRows.length===0) throw new Error("在途/库存明细为空。");
 
-      orderMatchEnabled = reviewOrderMatchSwitch(demRows, supRows, orderMatchEnabled);
+      orderMatchEnabled = await reviewOrderMatchSwitch(demRows, supRows, orderMatchEnabled);
       $("orderMatchEnabled").value = orderMatchEnabled ? "1" : "0";
 
-      specStrict = reviewSpecStrictSwitch(specStrict);
+      specStrict = await reviewSpecStrictSwitch(specStrict);
       $("specStrict").value = specStrict ? "1" : "0";
 
       const {out, unmet, left, quality} = runAllocation(demRows, supRows, {
