@@ -63,7 +63,7 @@
 
 <body>
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v4.8</span></div>
+    <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v4.9</span></div>
     <div class="actions">
       <button class="btn" id="btnLoadSample">载入示例</button>
       <button class="btn danger" id="btnClearAll">清空全部</button>
@@ -172,7 +172,7 @@
               </div>
             </div>
             <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridSupply"></table></div></div>
-            <div class="sub">列固定：库存状态(在库/在途) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量</div>
+            <div class="sub">列固定：库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量</div>
           </div>
         </div>
       </div>
@@ -187,7 +187,7 @@
           <div class="card">
             <h3 style="margin:0 0 10px 0">上传在途/库存Excel</h3>
             <input id="fileSupply" type="file" accept=".xlsx,.xls" />
-            <div class="sub">默认读取第一个sheet；库存状态仅接受“在库/在途”。若整列留空则忽略该列；若仅部分留空则自动跳过空值行。</div>
+            <div class="sub">默认读取第一个sheet；库存状态支持任意文本。若整列留空则忽略该列；若仅部分留空则自动跳过空值行。</div>
           </div>
         </div>
       </div>
@@ -232,6 +232,7 @@
       <div class="sub">每次功能调整都会更新版本和记录。</div>
       <div class="hr"></div>
       <div class="sub">
+        <div><strong>v4.9（2026-02-17）</strong>：放开库存状态限制，不再限定“在库/在途”；支持任意库存状态文本参与分配，并保留“在库→在途→其他状态”的消耗顺序。</div>
         <div><strong>v4.8（2026-02-17）</strong>：按业务口径微调跨规格规则：仅保留“美规结余优先给日规缺口”，不再额外保护日规库存（美规无结余时按正常优先级分配）。</div>
         <div><strong>v4.7（2026-02-17）</strong>：跨规格互补新增全局保护：同型号同颜色（及同订单号）下，只要仍有日规缺口，非日规不会先占用美规结余，优先留给日规补缺。</div>
         <div><strong>v4.6（2026-02-17）</strong>：修正亚马逊6/4分配逻辑：同型号+颜色+规格先跑完同规格（60%后40%）再跨规格互补；60%按箱规规则处理、40%不按箱规；小平台不再做箱规补齐。</div>
@@ -260,7 +261,7 @@
   </div>
 
 <script>
-  const APP_VERSION = "4.8";
+  const APP_VERSION = "4.9";
   const DEMAND_COLS = ["销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
   const SUPPLY_COLS = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
   const OUT_COLS    = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
@@ -306,7 +307,6 @@
   }
   function normStockStatus(v){
     const s = String(v ?? "").trim();
-    if(s !== "在库" && s !== "在途") return "";
     return s;
   }
 
@@ -645,7 +645,6 @@
         }
         continue;
       }
-      if(raw !== "在库" && raw !== "在途") throw new Error(`在途/库存明细：第${i+1}行“库存状态”只能是“在库”或“在途”，当前为“${raw}”。`);
       validRows.push(r);
     }
     return { validRows, skippedRows, ignoreStatus };
@@ -672,7 +671,7 @@
     })).filter(x => x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
   }
 
-  // ✅同一匹配条件下：先吃“在库”，再吃“在途”；若忽略库存状态则直接按顺序吃
+  // ✅同一匹配条件下：先吃“在库”，再吃“在途”，最后吃其他状态；若忽略库存状态则直接按顺序吃
   function consumeFromSupply(pool, matchFn, qtyNeed, ignoreStatus=false){
     const allocs = [];
     let need = toInt(qtyNeed);
@@ -691,11 +690,11 @@
       return allocs;
     }
 
-    function pass(wantStatus){
+    function passByStatus(statusMatch){
       for(const s of pool){
         if(need <= 0) break;
         if(s.qtyLeft <= 0) continue;
-        if(s.status !== wantStatus) continue;
+        if(!statusMatch(s.status)) continue;
         if(!matchFn(s)) continue;
 
         const take = Math.min(need, s.qtyLeft);
@@ -705,8 +704,9 @@
         allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
       }
     }
-    pass("在库");
-    pass("在途");
+    passByStatus((status)=>status === "在库");
+    passByStatus((status)=>status === "在途");
+    passByStatus((status)=>status !== "在库" && status !== "在途");
     return allocs;
   }
 
@@ -1189,7 +1189,7 @@
     }catch(e){
       console.error(e);
       setStatus("失败：" + (e?.message || String(e)), false);
-      $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态仅接受“在库/在途”（整列留空会忽略该列，部分留空会跳过空值行）；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
+      $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态支持任意文本（整列留空会忽略该列，部分留空会跳过空值行）；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
       $("unmetWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
       $("leftWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
       $("qualityWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
