@@ -1,1237 +1,1404 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>在途分货裂变 4.5</title>
+  <!doctype html>
+  <html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>在途分货裂变 5.1</title>
 
-  <style>
-    :root{
-      --bg:#F5F6F7; --card:#FFFFFF; --text:#1F2329; --muted:#646A73; --line:#E5E6EB;
-      --blue:#3370FF; --blue2:#2B5CFF; --shadow:0 8px 24px rgba(31,35,41,.06);
-      --radius:12px; --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI","PingFang SC","Microsoft YaHei", Arial;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font)}
-    .topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-    .brand{display:flex;gap:10px;align-items:center;font-weight:700}
-    .dot{width:10px;height:10px;border-radius:50%;background:var(--blue)}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#f0f4ff;color:var(--blue);border:1px solid rgba(51,112,255,.2);font-size:12px}
-    .actions{display:flex;gap:10px;align-items:center}
-    .container{max-width:1280px;margin:18px auto;padding:0 18px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .field{display:flex;gap:8px;align-items:center}
-    label{font-size:12px;color:var(--muted)}
-    input[type="text"], select{border:1px solid var(--line);border-radius:10px;padding:10px 10px;font-size:13px;outline:none;background:#fff;transition:.15s}
-    input[type="text"]:focus, select:focus{border-color:rgba(51,112,255,.55);box-shadow:0 0 0 3px rgba(51,112,255,.12)}
-    .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer;transition:.15s;display:inline-flex;gap:8px;align-items:center}
-    .btn:hover{border-color:#d0d3da;background:#fafafa}
-    .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
-    .btn.primary:hover{background:var(--blue2);border-color:var(--blue2)}
-    .btn.danger{border-color:#ffd1d1;background:#fff5f5}
-    .sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
-    .ok{color:#067647} .warn{color:#B42318}
-    .hr{height:1px;background:var(--line);margin:12px 0}
-    .tabs{display:flex;gap:8px;margin-bottom:10px}
-    .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer}
-    .tab.active{border-color:rgba(51,112,255,.5);box-shadow:0 0 0 3px rgba(51,112,255,.10)}
-    .hidden{display:none !important}
-    .sheet-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-    .sheet-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
-    .sheet-scroll{max-height:340px;overflow:auto}
-    table.sheet{width:100%;border-collapse:separate;border-spacing:0}
-    table.sheet thead th{position:sticky;top:0;z-index:2;background:#FAFAFA;color:var(--muted);font-weight:600;font-size:12px;border-bottom:1px solid var(--line);padding:10px 10px;text-align:left;white-space:nowrap}
-    table.sheet td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;vertical-align:top;background:#fff}
-    table.sheet tr td:last-child{border-right:none}
-    table.sheet tbody tr:last-child td{border-bottom:none}
-    .cell{padding:9px 10px;min-height:18px;font-size:13px;outline:none;white-space:pre-wrap;word-break:break-word}
-    .cell:focus{box-shadow: inset 0 0 0 2px rgba(51,112,255,.55);background:#F7F9FF}
-    .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
-    .modal-panel{width:min(580px,100%);background:#fff;border:1px solid #e8eaf0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24);padding:16px 16px 14px}
-    .modal-kicker{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef3ff;color:#2b5cff;border:1px solid rgba(43,92,255,.2)}
-    .modal-title{margin:10px 0 6px 0;font-size:19px;line-height:1.3}
-    .modal-main{font-size:14px;line-height:1.7;color:#1f2329}
-    .modal-sub{margin-top:8px;padding:10px 12px;border-radius:10px;background:#f7f8fb;border:1px solid #eceff5;color:#495265;font-size:13px;line-height:1.6}
-    .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
-  </style>
+    <style>
+      :root{
+        --bg:#F5F6F7; --card:#FFFFFF; --text:#1F2329; --muted:#646A73; --line:#E5E6EB;
+        --blue:#3370FF; --blue2:#2B5CFF; --shadow:0 8px 24px rgba(31,35,41,.06);
+        --radius:12px; --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI","PingFang SC","Microsoft YaHei", Arial;
+      }
+      *{box-sizing:border-box}
+      body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font)}
+      .topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+      .brand{display:flex;gap:10px;align-items:center;font-weight:700}
+      .dot{width:10px;height:10px;border-radius:50%;background:var(--blue)}
+      .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#f0f4ff;color:var(--blue);border:1px solid rgba(51,112,255,.2);font-size:12px}
+      .actions{display:flex;gap:10px;align-items:center}
+      .container{max-width:1280px;margin:18px auto;padding:0 18px}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+      .grid > *{min-width:0}
+      .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;min-width:0}
+      .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+      .field{display:flex;gap:8px;align-items:center}
+      label{font-size:12px;color:var(--muted)}
+      input[type="text"], select{border:1px solid var(--line);border-radius:10px;padding:10px 10px;font-size:13px;outline:none;background:#fff;transition:.15s}
+      input[type="text"]:focus, select:focus{border-color:rgba(51,112,255,.55);box-shadow:0 0 0 3px rgba(51,112,255,.12)}
+      .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer;transition:.15s;display:inline-flex;gap:8px;align-items:center}
+      .btn:hover{border-color:#d0d3da;background:#fafafa}
+      .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+      .btn.primary:hover{background:var(--blue2);border-color:var(--blue2)}
+      .btn.danger{border-color:#ffd1d1;background:#fff5f5}
+      .sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
+      .ok{color:#067647} .warn{color:#B42318}
+      .hr{height:1px;background:var(--line);margin:12px 0}
+      .tabs{display:flex;gap:8px;margin-bottom:10px}
+      .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer}
+      .tab.active{border-color:rgba(51,112,255,.5);box-shadow:0 0 0 3px rgba(51,112,255,.10)}
+      .hidden{display:none !important}
+      .sheet-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+      .sheet-meta{display:flex;gap:8px;flex-wrap:wrap}
+      .meta-pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#f7f8fb;border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap}
+      .sheet-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;min-width:0}
+      .sheet-scroll{max-height:340px;overflow:auto;width:100%}
+      table.sheet{width:100%;border-collapse:separate;border-spacing:0}
+      table.sheet thead th{position:sticky;top:0;z-index:2;background:#FAFAFA;color:var(--muted);font-weight:600;font-size:12px;border-bottom:1px solid var(--line);padding:10px 10px;text-align:left;white-space:nowrap}
+      table.sheet td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;vertical-align:top;background:#fff}
+      table.sheet tr td:last-child{border-right:none}
+      table.sheet tbody tr:last-child td{border-bottom:none}
+      .cell{padding:9px 10px;min-height:18px;font-size:13px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .cell:focus{box-shadow: inset 0 0 0 2px rgba(51,112,255,.55);background:#F7F9FF;overflow:auto;text-overflow:clip}
+      .log-card{position:relative;overflow:visible}
+      .log-preview{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+      .log-hint{font-size:12px;color:var(--muted);white-space:nowrap}
+      .log-details{position:absolute;left:14px;right:14px;top:calc(100% - 6px);padding:14px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:360px;overflow:auto;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s ease, transform .18s ease;z-index:20}
+      .log-card:hover .log-details,
+      .log-card:focus-within .log-details{opacity:1;transform:none;pointer-events:auto}
+      .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
+      .modal-panel{width:min(580px,100%);background:#fff;border:1px solid #e8eaf0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24);padding:16px 16px 14px}
+      .modal-kicker{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef3ff;color:#2b5cff;border:1px solid rgba(43,92,255,.2)}
+      .modal-title{margin:10px 0 6px 0;font-size:19px;line-height:1.3}
+      .modal-main{font-size:14px;line-height:1.7;color:#1f2329}
+      .modal-sub{margin-top:8px;padding:10px 12px;border-radius:10px;background:#f7f8fb;border:1px solid #eceff5;color:#495265;font-size:13px;line-height:1.6}
+      .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+    </style>
 
-  <!-- 可选：用于导出XLSX（未引入也能用TSV下载） -->
-  <script src="./xlsx.full.min.js"></script>
-</head>
+    <!-- 可选：用于导出XLSX（未引入也能用TSV下载） -->
+    <script src="./xlsx.full.min.js"></script>
+  </head>
 
-<body>
-  <div class="topbar">
-    <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v4.9</span></div>
-    <div class="actions">
-      <button class="btn" id="btnLoadSample">载入示例</button>
-      <button class="btn danger" id="btnClearAll">清空全部</button>
-      <button class="btn primary" id="btnRun">生成裂变结果</button>
+  <body>
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v5.5</span></div>
+      <div class="actions">
+        <button class="btn" id="btnLoadSample">载入示例</button>
+        <button class="btn danger" id="btnClearAll">清空全部</button>
+        <button class="btn primary" id="btnRun">生成裂变结果</button>
+      </div>
     </div>
-  </div>
 
-  <div class="container">
-    <div class="card">
-      <div class="row" style="justify-content:space-between">
-        <div class="row">
-          <div class="field">
-            <label>优先级方向</label>
-            <select id="priorityDir">
-              <option value="asc" selected>数字越小越优先</option>
-              <option value="desc">数字越大越优先</option>
-            </select>
+    <div class="container">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div class="row">
+            <div class="field">
+              <label>优先级方向</label>
+              <select id="priorityDir">
+                <option value="asc" selected>数字越小越优先</option>
+                <option value="desc">数字越大越优先</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>亚马逊批次</label>
+              <select id="amazonMode">
+                <option value="60_40" selected>先60%滚一遍，再40%滚一遍</option>
+                <option value="100">不分批（一次性全量）</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>小平台优先</label>
+              <select id="smallFirst">
+                <option value="1" selected>是（先小平台）</option>
+                <option value="0">否（按全局优先级混排）</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>只允许同规格裂变</label>
+              <select id="specStrict">
+                <option value="1" selected>开（禁止跨规格补缺）</option>
+                <option value="0">关（同规格先跑完后再跨规格补缺：日缺口优先吃美结余）</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>箱规取整（亚马逊60%阶段）</label>
+              <select id="boxEnabled">
+                <option value="1">开（按箱规倍数向上取整）</option>
+                <option value="0" selected>关（不按箱规；仍保证整数）</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>按销售采购订单号匹配</label>
+              <select id="orderMatchEnabled">
+                <option value="0">关（忽略需求侧订单号）</option>
+                <option value="1" selected>开（严格同订单号扣减）</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>未分配站点名</label>
+              <input id="unassignedSite" type="text" value="未分配/留库存" />
+            </div>
+
+            <div class="field">
+              <label>合并同站点行</label>
+              <select id="mergeOut">
+                <option value="1" selected>是（推荐）</option>
+                <option value="0">否</option>
+              </select>
+            </div>
           </div>
 
-          <div class="field">
-            <label>亚马逊批次</label>
-            <select id="amazonMode">
-              <option value="60_40" selected>先60%滚一遍，再40%滚一遍</option>
-              <option value="100">不分批（一次性全量）</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>小平台优先</label>
-            <select id="smallFirst">
-              <option value="1" selected>是（先小平台）</option>
-              <option value="0">否（按全局优先级混排）</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>只允许同规格裂变</label>
-            <select id="specStrict">
-              <option value="1" selected>开（禁止跨规格补缺）</option>
-              <option value="0">关（同规格先跑完后再跨规格补缺：日缺口优先吃美结余）</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>箱规取整（亚马逊60%阶段）</label>
-            <select id="boxEnabled">
-              <option value="1">开（按箱规倍数向上取整）</option>
-              <option value="0" selected>关（不按箱规；仍保证整数）</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>按销售采购订单号匹配</label>
-            <select id="orderMatchEnabled">
-              <option value="0">关（忽略需求侧订单号）</option>
-              <option value="1" selected>开（严格同订单号扣减）</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>未分配站点名</label>
-            <input id="unassignedSite" type="text" value="未分配/留库存" />
-          </div>
-
-          <div class="field">
-            <label>合并同站点行</label>
-            <select id="mergeOut">
-              <option value="1" selected>是（推荐）</option>
-              <option value="0">否</option>
-            </select>
+          <div class="row">
+            <span id="status" class="sub">就绪：左边粘贴“需求明细”，右边粘贴“在途/库存明细”，然后点“生成裂变结果”。</span>
           </div>
         </div>
 
-        <div class="row">
-          <span id="status" class="sub">就绪：左边粘贴“需求明细”，右边粘贴“在途/库存明细”，然后点“生成裂变结果”。</span>
+        <div class="hr"></div>
+
+        <div class="tabs">
+          <div class="tab active" data-tab="grid">表格粘贴（推荐）</div>
+          <div class="tab" data-tab="excel">上传Excel</div>
         </div>
-      </div>
 
-      <div class="hr"></div>
-
-      <div class="tabs">
-        <div class="tab active" data-tab="grid">表格粘贴（推荐）</div>
-        <div class="tab" data-tab="excel">上传Excel</div>
-      </div>
-
-      <div id="panelGrid">
-        <div class="grid">
+        <div id="panelGrid">
+          <div class="grid">
           <div class="card">
             <div class="sheet-toolbar">
-              <h3 style="margin:0">需求明细</h3>
+              <div class="row">
+                <h3 style="margin:0">需求明细</h3>
+                <div class="sheet-meta">
+                  <span class="meta-pill" id="metaDemandUsed">已用 0 行</span>
+                  <span class="meta-pill" id="metaDemandPaste">最近未粘贴</span>
+                </div>
+              </div>
               <div class="row">
                 <button class="btn" id="btnAddDemandRows">追加50行</button>
                 <button class="btn danger" id="btnClearDemand">清空需求</button>
               </div>
             </div>
-            <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridDemand"></table></div></div>
-            <div class="sub">列固定：销售采购订单号 / 型号 / 颜色 / 站点（平台） / SI数量 / 品线 / 需求规格 / 平台 / 箱规信息 / 优先级</div>
-          </div>
+              <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridDemand"></table></div></div>
+              <div class="sub">列固定：销售采购订单号 / 型号 / 颜色 / 站点（平台） / SI数量 / 品线 / 需求规格 / 平台 / 箱规信息 / 优先级</div>
+            </div>
 
           <div class="card">
             <div class="sheet-toolbar">
-              <h3 style="margin:0">在途 / 库存明细</h3>
+              <div class="row">
+                <h3 style="margin:0">在途 / 库存明细</h3>
+                <div class="sheet-meta">
+                  <span class="meta-pill" id="metaSupplyUsed">已用 0 行</span>
+                  <span class="meta-pill" id="metaSupplyPaste">最近未粘贴</span>
+                </div>
+              </div>
               <div class="row">
                 <button class="btn" id="btnAddSupplyRows">追加50行</button>
                 <button class="btn danger" id="btnClearSupply">清空在途</button>
               </div>
             </div>
             <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridSupply"></table></div></div>
-            <div class="sub">列固定：库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量</div>
+            <div class="sub">列固定：库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panelExcel" class="hidden">
+          <div class="grid">
+            <div class="card">
+              <h3 style="margin:0 0 10px 0">上传需求Excel</h3>
+              <input id="fileDemand" type="file" accept=".xlsx,.xls" />
+              <div class="sub">默认读取第一个sheet；当“按销售采购订单号匹配=开”时，需求侧销售采购订单号不能为空。</div>
+            </div>
+            <div class="card">
+              <h3 style="margin:0 0 10px 0">上传在途/库存Excel</h3>
+              <input id="fileSupply" type="file" accept=".xlsx,.xls" />
+            <div class="sub">默认读取第一个sheet；库存状态支持任意文本。若整列留空则忽略该列；若仅部分留空则自动跳过空值行。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div id="panelExcel" class="hidden">
-        <div class="grid">
-          <div class="card">
-            <h3 style="margin:0 0 10px 0">上传需求Excel</h3>
-            <input id="fileDemand" type="file" accept=".xlsx,.xls" />
-            <div class="sub">默认读取第一个sheet；当“按销售采购订单号匹配=开”时，需求侧销售采购订单号不能为空。</div>
+      <div class="card" style="margin-top:14px">
+        <div class="row" style="justify-content:space-between">
+          <h3 style="margin:0">裂变输出（导入用）</h3>
+          <div class="row">
+            <button class="btn" id="btnDownloadTSV" disabled>下载TSV</button>
+            <button class="btn primary" id="btnDownloadXLSX" disabled>下载XLSX</button>
           </div>
-          <div class="card">
-            <h3 style="margin:0 0 10px 0">上传在途/库存Excel</h3>
-            <input id="fileSupply" type="file" accept=".xlsx,.xls" />
-            <div class="sub">默认读取第一个sheet；库存状态支持任意文本。若整列留空则忽略该列；若仅部分留空则自动跳过空值行。</div>
+        </div>
+        <div class="sub">输出列：库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
+        <div class="hr"></div>
+        <div id="outWrap" class="sub">还没有生成结果。</div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3 style="margin:0">未满足需求（对账用）</h3>
+        <div class="sub">这里展示“按规则分配后仍缺口”的行。</div>
+        <div class="hr"></div>
+        <div id="unmetWrap" class="sub">还没有生成结果。</div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3 style="margin:0">在途/库存剩余（对账用）</h3>
+        <div class="sub">这张表会和“裂变输出”里【站点=未分配站点名】的数量一致（对账用）。</div>
+        <div class="hr"></div>
+        <div id="leftWrap" class="sub">还没有生成结果。</div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3 style="margin:0">数据质量报告</h3>
+        <div class="sub">展示被跳过/被忽略的数据行，便于回溯。</div>
+        <div class="hr"></div>
+        <div id="qualityWrap" class="sub">还没有生成结果。</div>
+      </div>
+
+      <div class="card log-card" style="margin-top:14px" tabindex="0">
+        <div class="log-preview">
+          <div>
+            <h3 style="margin:0">更新日志</h3>
+            <div class="sub"><strong>v5.5（2026-03-04）</strong>：修正订单号匹配口径：开启后在库/在途/其他状态统一按订单号匹配，不再允许在库跨订单分配。</div>
+          </div>
+          <div class="log-hint">悬浮展开</div>
+        </div>
+        <div class="log-details">
+          <div class="sub">
+            <div><strong>v5.5（2026-03-04）</strong>：修正订单号匹配口径：开启后在库/在途/其他状态统一按订单号匹配，不再允许在库跨订单分配。</div>
+            <div><strong>v5.4（2026-03-04）</strong>：调整库存状态规则：仅当库存状态列同时存在“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”补缺；来源规格自身仍有缺口时不得外借，并保留“美规优先补日规”。</div>
+            <div><strong>v5.3（2026-03-04）</strong>：重做库存状态规则：仅当库存状态列同时存在“在库/在途”时才区分状态；同规格原始存在在途时禁止异规格改制，且来源规格自身仍有缺口时不得外借。</div>
+            <div><strong>v5.2（2026-03-04）</strong>：库存状态提升为最外层分配阶段，按“在库→在途→其他状态”依次完整执行；库存状态整列留空时回退原规则。</div>
+            <div><strong>v5.1（2026-02-17）</strong>：在库可跨订单优先分配；修正表格溢出；更新日志改为悬浮展开且页面不跳动。</div>
+            <div><strong>v5.0（2026-02-17）</strong>：优化粘贴体验、折叠更新日志，明确“在库优先”，并精简生成前审核弹窗文案。</div>
+            <div><strong>v4.9（2026-02-17）</strong>：放开库存状态限制，不再限定“在库/在途”；支持任意库存状态文本参与分配，并保留“在库→在途→其他状态”的消耗顺序。</div>
+            <div><strong>v4.8（2026-02-17）</strong>：按业务口径微调跨规格规则：仅保留“美规结余优先给日规缺口”，不再额外保护日规库存（美规无结余时按正常优先级分配）。</div>
+            <div><strong>v4.7（2026-02-17）</strong>：跨规格互补新增全局保护：同型号同颜色（及同订单号）下，只要仍有日规缺口，非日规不会先占用美规结余，优先留给日规补缺。</div>
+            <div><strong>v4.6（2026-02-17）</strong>：修正亚马逊6/4分配逻辑：同型号+颜色+规格先跑完同规格（60%后40%）再跨规格互补；60%按箱规规则处理、40%不按箱规；小平台不再做箱规补齐。</div>
+            <div><strong>v4.5（2026-02-06）</strong>：重做生成前防呆弹窗样式与文案，替换原生alert/confirm为统一审核弹窗。</div>
+            <div><strong>v4.4（2026-02-06）</strong>：修复跨规格互补时日规优先级问题，先保障同型号同颜色（日规）缺口，再允许其他规格占用日规库存。</div>
+            <div><strong>v4.3（2026-02-06）</strong>：清理更新日志，移除字体需求相关记录。</div>
+            <div><strong>v4.2（2026-02-06）</strong>：优化导出参数兼容性。</div>
+            <div><strong>v4.1（2026-02-06）</strong>：新增生成前二次审核（订单号匹配、同规格裂变），并完善自动开关提醒逻辑。</div>
+            <div><strong>v4.0（2026-02-06）</strong>：库存状态移至最左列；库存状态整列留空可忽略、部分留空自动跳过；新增数据质量报告；裂变输出导出新增“映射”列。</div>
+            <div><strong>v3.0</strong>：基础分货裂变流程与导入导出能力。</div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <div class="row" style="justify-content:space-between">
-        <h3 style="margin:0">裂变输出（导入用）</h3>
-        <div class="row">
-          <button class="btn" id="btnDownloadTSV" disabled>下载TSV</button>
-          <button class="btn primary" id="btnDownloadXLSX" disabled>下载XLSX</button>
+    <div id="reviewModalMask" class="modal-mask hidden" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+      <div class="modal-panel">
+        <span class="modal-kicker" id="reviewModalKicker">生成前审核</span>
+        <h3 id="reviewModalTitle" class="modal-title"></h3>
+        <div id="reviewModalMain" class="modal-main"></div>
+        <div id="reviewModalSub" class="modal-sub hidden"></div>
+        <div class="modal-actions">
+          <button id="reviewModalCancel" class="btn">取消</button>
+          <button id="reviewModalConfirm" class="btn primary">确认</button>
         </div>
       </div>
-      <div class="sub">输出列：库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
-      <div class="hr"></div>
-      <div id="outWrap" class="sub">还没有生成结果。</div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <h3 style="margin:0">未满足需求（对账用）</h3>
-      <div class="sub">这里展示“按规则分配后仍缺口”的行。</div>
-      <div class="hr"></div>
-      <div id="unmetWrap" class="sub">还没有生成结果。</div>
-    </div>
+  <script>
+    const APP_VERSION = "5.5";
+    const DEMAND_COLS = ["销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
+    const SUPPLY_COLS = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
+    const OUT_COLS    = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
 
-    <div class="card" style="margin-top:14px">
-      <h3 style="margin:0">在途/库存剩余（对账用）</h3>
-      <div class="sub">这张表会和“裂变输出”里【站点=未分配站点名】的数量一致（对账用）。</div>
-      <div class="hr"></div>
-      <div id="leftWrap" class="sub">还没有生成结果。</div>
-    </div>
+    const $ = (id)=>document.getElementById(id);
+    const state = { outRows: [], unmetRows: [], leftRows: [], qualityRows: [] };
+    const gridStats = {
+      gridDemand: { pastedRows: 0, pastedCols: 0 },
+      gridSupply: { pastedRows: 0, pastedCols: 0 }
+    };
+    const GRID_META = {
+      gridDemand: { usedId: "metaDemandUsed", pasteId: "metaDemandPaste", label: "需求明细" },
+      gridSupply: { usedId: "metaSupplyUsed", pasteId: "metaSupplyPaste", label: "在途/库存明细" }
+    };
+    document.title = `在途分货裂变 ${APP_VERSION}`;
+    if($("appVersion")) $("appVersion").textContent = `v${APP_VERSION}`;
 
-    <div class="card" style="margin-top:14px">
-      <h3 style="margin:0">数据质量报告</h3>
-      <div class="sub">展示被跳过/被忽略的数据行，便于回溯。</div>
-      <div class="hr"></div>
-      <div id="qualityWrap" class="sub">还没有生成结果。</div>
-    </div>
-
-    <div class="card" style="margin-top:14px">
-      <h3 style="margin:0">更新日志</h3>
-      <div class="sub">每次功能调整都会更新版本和记录。</div>
-      <div class="hr"></div>
-      <div class="sub">
-        <div><strong>v4.9（2026-02-17）</strong>：放开库存状态限制，不再限定“在库/在途”；支持任意库存状态文本参与分配，并保留“在库→在途→其他状态”的消耗顺序。</div>
-        <div><strong>v4.8（2026-02-17）</strong>：按业务口径微调跨规格规则：仅保留“美规结余优先给日规缺口”，不再额外保护日规库存（美规无结余时按正常优先级分配）。</div>
-        <div><strong>v4.7（2026-02-17）</strong>：跨规格互补新增全局保护：同型号同颜色（及同订单号）下，只要仍有日规缺口，非日规不会先占用美规结余，优先留给日规补缺。</div>
-        <div><strong>v4.6（2026-02-17）</strong>：修正亚马逊6/4分配逻辑：同型号+颜色+规格先跑完同规格（60%后40%）再跨规格互补；60%按箱规规则处理、40%不按箱规；小平台不再做箱规补齐。</div>
-        <div><strong>v4.5（2026-02-06）</strong>：重做生成前防呆弹窗样式与文案，替换原生alert/confirm为统一审核弹窗。</div>
-        <div><strong>v4.4（2026-02-06）</strong>：修复跨规格互补时日规优先级问题，先保障同型号同颜色（日规）缺口，再允许其他规格占用日规库存。</div>
-        <div><strong>v4.3（2026-02-06）</strong>：清理更新日志，移除字体需求相关记录。</div>
-        <div><strong>v4.2（2026-02-06）</strong>：优化导出参数兼容性。</div>
-        <div><strong>v4.1（2026-02-06）</strong>：新增生成前二次审核（订单号匹配、同规格裂变），并完善自动开关提醒逻辑。</div>
-        <div><strong>v4.0（2026-02-06）</strong>：库存状态移至最左列；库存状态整列留空可忽略、部分留空自动跳过；新增数据质量报告；裂变输出导出新增“映射”列。</div>
-        <div><strong>v3.0</strong>：基础分货裂变流程与导入导出能力。</div>
-      </div>
-    </div>
-  </div>
-
-  <div id="reviewModalMask" class="modal-mask hidden" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
-    <div class="modal-panel">
-      <span class="modal-kicker" id="reviewModalKicker">生成前审核</span>
-      <h3 id="reviewModalTitle" class="modal-title"></h3>
-      <div id="reviewModalMain" class="modal-main"></div>
-      <div id="reviewModalSub" class="modal-sub hidden"></div>
-      <div class="modal-actions">
-        <button id="reviewModalCancel" class="btn">取消</button>
-        <button id="reviewModalConfirm" class="btn primary">确认</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-  const APP_VERSION = "4.9";
-  const DEMAND_COLS = ["销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
-  const SUPPLY_COLS = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
-  const OUT_COLS    = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
-
-  const $ = (id)=>document.getElementById(id);
-  const state = { outRows: [], unmetRows: [], leftRows: [], qualityRows: [] };
-  document.title = `在途分货裂变 ${APP_VERSION}`;
-  if($("appVersion")) $("appVersion").textContent = `v${APP_VERSION}`;
-
-  function setStatus(msg, ok=true){
-    const el = $("status");
-    el.textContent = msg;
-    el.className = "sub " + (ok ? "ok" : "warn");
-  }
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-  function toNum(v){
-    const n = Number(String(v ?? "").replace(/,/g,"").trim());
-    return Number.isFinite(n) ? n : 0;
-  }
-  function toInt(v){
-    return Math.max(0, Math.floor(toNum(v)));
-  }
-  function roundUpBox(qty, box, enabled=true){
-    const q = Math.max(0, Math.ceil(toNum(qty)));
-    if(!enabled) return q;
-    const b = toInt(box);
-    if(b <= 0) return q;
-    return Math.ceil(q / b) * b;
-  }
-  function normSpec(x){
-    const s = String(x ?? "").trim();
-    if(!s) return "";
-    if(s.includes("日")) return "日";
-    if(s.includes("美")) return "美";
-    if(s.includes("欧")) return "欧";
-    if(s.includes("英")) return "英";
-    return s;
-  }
-  function normKey(v){
-    return String(v ?? "").trim().toUpperCase();
-  }
-  function normStockStatus(v){
-    const s = String(v ?? "").trim();
-    return s;
-  }
-
-  function buildGrid(tableId, columns, initialRows=50){
-    const table = $(tableId);
-    table.innerHTML = "";
-    const thead = document.createElement("thead");
-    const trh = document.createElement("tr");
-    columns.forEach(c=>{
-      const th = document.createElement("th");
-      th.textContent = c;
-      trh.appendChild(th);
-    });
-    thead.appendChild(trh);
-
-    const tbody = document.createElement("tbody");
-    for(let r=0;r<initialRows;r++){
-      const tr = document.createElement("tr");
-      for(let c=0;c<columns.length;c++){
-        const td = document.createElement("td");
-        const div = document.createElement("div");
-        div.className = "cell";
-        div.contentEditable = "true";
-        div.dataset.r = String(r);
-        div.dataset.c = String(c);
-        div.addEventListener("paste", (e)=>onPasteIntoGrid(e, tableId, columns));
-        td.appendChild(div);
-        tr.appendChild(td);
-      }
-      tbody.appendChild(tr);
+    function setStatus(msg, ok=true){
+      const el = $("status");
+      el.textContent = msg;
+      el.className = "sub " + (ok ? "ok" : "warn");
     }
-    table.appendChild(thead);
-    table.appendChild(tbody);
-  }
-  function addRows(tableId, columns, n=50){
-    const table = $(tableId);
-    const tbody = table.querySelector("tbody");
-    const startR = tbody.children.length;
-    for(let r=0;r<n;r++){
-      const tr = document.createElement("tr");
-      for(let c=0;c<columns.length;c++){
-        const td = document.createElement("td");
-        const div = document.createElement("div");
-        div.className = "cell";
-        div.contentEditable = "true";
-        div.dataset.r = String(startR + r);
-        div.dataset.c = String(c);
-        div.addEventListener("paste", (e)=>onPasteIntoGrid(e, tableId, columns));
-        td.appendChild(div);
-        tr.appendChild(td);
-      }
-      tbody.appendChild(tr);
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     }
-  }
-  function clearGrid(tableId){
-    $(tableId).querySelectorAll(".cell").forEach(cell=>cell.textContent="");
-  }
-  function ensureRows(tableId, columns, needRows){
-    const tbody = $(tableId).querySelector("tbody");
-    const cur = tbody.children.length;
-    if(needRows > cur) addRows(tableId, columns, needRows - cur);
-  }
-  function parseClipboardGrid(text){
-    const rows = text.replace(/\r/g,"").split("\n");
-    if(rows.length && rows[rows.length-1]==="") rows.pop();
-    return rows.map(line => line.split("\t"));
-  }
-  function onPasteIntoGrid(e, tableId, columns){
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData("text");
-    const matrix = parseClipboardGrid(text);
-    if(matrix.length===0) return;
-
-    const active = document.activeElement;
-    if(!active || !active.classList.contains("cell")) return;
-
-    const r0 = Number(active.dataset.r);
-    const c0 = Number(active.dataset.c);
-
-    ensureRows(tableId, columns, r0 + matrix.length);
-
-    const tbody = $(tableId).querySelector("tbody");
-    for(let r=0;r<matrix.length;r++){
-      const row = matrix[r];
-      const tr = tbody.children[r0 + r];
-      if(!tr) continue;
-      const cells = tr.querySelectorAll(".cell");
-      for(let c=0;c<row.length;c++){
-        const tc = c0 + c;
-        if(tc >= columns.length) break;
-        cells[tc].textContent = row[c];
+    function toNum(v){
+      const n = Number(String(v ?? "").replace(/,/g,"").trim());
+      return Number.isFinite(n) ? n : 0;
+    }
+    function toInt(v){
+      return Math.max(0, Math.floor(toNum(v)));
+    }
+    function roundUpBox(qty, box, enabled=true){
+      const q = Math.max(0, Math.ceil(toNum(qty)));
+      if(!enabled) return q;
+      const b = toInt(box);
+      if(b <= 0) return q;
+      return Math.ceil(q / b) * b;
+    }
+    function normSpec(x){
+      const s = String(x ?? "").trim();
+      if(!s) return "";
+      if(s.includes("日")) return "日";
+      if(s.includes("美")) return "美";
+      if(s.includes("欧")) return "欧";
+      if(s.includes("英")) return "英";
+      return s;
+    }
+    function normKey(v){
+      return String(v ?? "").trim().toUpperCase();
+    }
+    function normStockStatus(v){
+      const s = String(v ?? "").trim();
+      return s;
+    }
+    function getGridColumns(tableId){
+      if(tableId === "gridDemand") return DEMAND_COLS;
+      if(tableId === "gridSupply") return SUPPLY_COLS;
+      return [];
+    }
+    function syncCellTitle(cell){
+      cell.title = (cell.textContent ?? "").trim();
+    }
+    function setCellText(cell, value){
+      cell.textContent = String(value ?? "");
+      syncCellTitle(cell);
+    }
+    function countGridUsedRows(tableId, columns){
+      const tbody = $(tableId)?.querySelector("tbody");
+      if(!tbody) return 0;
+      let used = 0;
+      for(const tr of tbody.children){
+        const cells = tr.querySelectorAll(".cell");
+        if(columns.some((_, idx)=>String(cells[idx]?.textContent ?? "").trim() !== "")) used++;
+      }
+      return used;
+    }
+    function updateGridMeta(tableId, columns){
+      const cfg = GRID_META[tableId];
+      if(!cfg) return;
+      const usedEl = $(cfg.usedId);
+      const pasteEl = $(cfg.pasteId);
+      if(usedEl) usedEl.textContent = `已用 ${countGridUsedRows(tableId, columns)} 行`;
+      if(pasteEl){
+        const stat = gridStats[tableId];
+        pasteEl.textContent = stat.pastedRows > 0 ? `最近粘贴 ${stat.pastedRows} 行` : "最近未粘贴";
       }
     }
-  }
-  function readGridData(tableId, columns){
-    const tbody = $(tableId).querySelector("tbody");
-    const rows = [];
-    for(const tr of tbody.children){
-      const obj = {};
-      let allEmpty = true;
-      const cells = tr.querySelectorAll(".cell");
-      columns.forEach((col, idx)=>{
-        const v = (cells[idx]?.textContent ?? "").trim();
-        obj[col] = v;
-        if(v !== "") allEmpty = false;
+    function resetGridMeta(tableId){
+      if(gridStats[tableId]) gridStats[tableId] = { pastedRows: 0, pastedCols: 0 };
+      updateGridMeta(tableId, getGridColumns(tableId));
+    }
+    function recordGridPaste(tableId, rows, cols){
+      if(gridStats[tableId]) gridStats[tableId] = { pastedRows: rows, pastedCols: cols };
+      updateGridMeta(tableId, getGridColumns(tableId));
+      const label = GRID_META[tableId]?.label || tableId;
+      setStatus(`${label}已粘贴 ${rows} 行${cols ? ` × ${cols} 列` : ""}。`, true);
+    }
+    function createGridCell(r, c, tableId, columns){
+      const td = document.createElement("td");
+      const div = document.createElement("div");
+      div.className = "cell";
+      div.contentEditable = "true";
+      div.dataset.r = String(r);
+      div.dataset.c = String(c);
+      div.addEventListener("paste", (e)=>onPasteIntoGrid(e, tableId, columns));
+      div.addEventListener("input", ()=>{
+        syncCellTitle(div);
+        updateGridMeta(tableId, columns);
       });
-      if(!allEmpty) rows.push(obj);
-    }
-    return rows;
-  }
-  function fillGridFromObjects(tableId, columns, data){
-    clearGrid(tableId);
-    ensureRows(tableId, columns, Math.max(50, data.length));
-    const tbody = $(tableId).querySelector("tbody");
-    for(let r=0;r<data.length;r++){
-      const tr = tbody.children[r];
-      const cells = tr.querySelectorAll(".cell");
-      for(let c=0;c<columns.length;c++){
-        cells[c].textContent = data[r][columns[c]] ?? "";
-      }
-    }
-  }
-
-  function renderTable(containerId, rows){
-    const wrap = $(containerId);
-    if(!rows || rows.length===0){
-      wrap.innerHTML = '<div class="sub">空</div>';
-      return;
-    }
-    const cols = Object.keys(rows[0]);
-    const thead = `<tr>${cols.map(c=>`<th>${escapeHtml(c)}</th>`).join("")}</tr>`;
-    const tbody = rows.map(r=>`<tr>${cols.map(c=>`<td><div class="cell" style="border:0;box-shadow:none;background:#fff" contenteditable="false">${escapeHtml(String(r[c]??""))}</div></td>`).join("")}</tr>`).join("");
-    wrap.innerHTML = `<div class="sheet-wrap"><div class="sheet-scroll" style="max-height:420px"><table class="sheet"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div></div>`;
-  }
-
-  function rowsToTSV(rows, cols){
-    if(!rows || rows.length===0) return "";
-    const c = cols && cols.length ? cols : Object.keys(rows[0]);
-    const lines = [];
-    lines.push(c.join("\t"));
-    for(const r of rows){
-      lines.push(c.map(k => String(r[k]??"")).join("\t"));
-    }
-    return lines.join("\n");
-  }
-  function downloadText(filename, text, mime){
-    const blob = new Blob([text], {type: mime});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-  function enableDownloads(enabled){
-    $("btnDownloadTSV").disabled = !enabled;
-    $("btnDownloadXLSX").disabled = !enabled;
-  }
-  async function readExcelFile(file){
-    if(!window.XLSX) throw new Error("XLSX库未加载：无法导出XLSX（可用TSV下载）。");
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, {type:"array"});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws, {defval:""});
-  }
-  function applySheetFont(ws, fontName, fontSize){
-    if(!ws || !ws["!ref"] || !window.XLSX?.utils) return;
-    const range = XLSX.utils.decode_range(ws["!ref"]);
-    for(let r = range.s.r; r <= range.e.r; r++){
-      for(let c = range.s.c; c <= range.e.c; c++){
-        const addr = XLSX.utils.encode_cell({r, c});
-        const cell = ws[addr];
-        if(!cell) continue;
-        const s = cell.s || {};
-        const f = s.font || {};
-        cell.s = { ...s, font: { ...f, name: fontName, sz: fontSize } };
-      }
-    }
-  }
-  function applyWorkbookFont(wb, fontName, fontSize){
-    if(!wb || !wb.SheetNames || !wb.Sheets) return;
-    for(const name of wb.SheetNames){
-      applySheetFont(wb.Sheets[name], fontName, fontSize);
-    }
-  }
-
-  const reviewModalState = {
-    resolve: null,
-    keyHandler: null
-  };
-  function closeReviewModal(result){
-    if(!reviewModalState.resolve) return;
-    const done = reviewModalState.resolve;
-    reviewModalState.resolve = null;
-    if(reviewModalState.keyHandler){
-      document.removeEventListener("keydown", reviewModalState.keyHandler);
-      reviewModalState.keyHandler = null;
-    }
-    $("reviewModalMask").classList.add("hidden");
-    document.body.style.overflow = "";
-    done(!!result);
-  }
-  function showReviewModal(opts){
-    const {
-      kicker = "生成前审核",
-      title = "请确认",
-      main = "",
-      sub = "",
-      confirmText = "确认",
-      cancelText = "取消",
-      showCancel = true
-    } = (opts || {});
-
-    if(reviewModalState.resolve) closeReviewModal(false);
-
-    $("reviewModalKicker").textContent = kicker;
-    $("reviewModalTitle").textContent = title;
-    $("reviewModalMain").innerHTML = escapeHtml(main).replace(/\n/g, "<br>");
-
-    if(sub){
-      $("reviewModalSub").classList.remove("hidden");
-      $("reviewModalSub").innerHTML = escapeHtml(sub).replace(/\n/g, "<br>");
-    }else{
-      $("reviewModalSub").classList.add("hidden");
-      $("reviewModalSub").textContent = "";
-    }
-
-    $("reviewModalConfirm").textContent = confirmText;
-    $("reviewModalCancel").textContent = cancelText;
-    $("reviewModalCancel").classList.toggle("hidden", !showCancel);
-
-    $("reviewModalMask").classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-    setTimeout(()=>$("reviewModalConfirm").focus(), 0);
-
-    return new Promise((resolve)=>{
-      reviewModalState.resolve = resolve;
-      reviewModalState.keyHandler = (e)=>{
-        if(e.key === "Escape") closeReviewModal(false);
-        if(e.key === "Enter") closeReviewModal(true);
-      };
-      document.addEventListener("keydown", reviewModalState.keyHandler);
-    });
-  }
-  $("reviewModalMask").addEventListener("click", (e)=>{
-    if(e.target === $("reviewModalMask")) closeReviewModal(false);
-  });
-  $("reviewModalCancel").addEventListener("click", ()=>closeReviewModal(false));
-  $("reviewModalConfirm").addEventListener("click", ()=>closeReviewModal(true));
-
-  async function reviewOrderMatchSwitch(demRows, supRows, currentEnabled){
-    const demandOrders = demRows.map(r => String(r["销售采购订单号"] ?? "").trim());
-    const supplyOrders = supRows.map(r => String(r["销售采购订单号"] ?? "").trim());
-    const demandHasBlank = demandOrders.some(v => v === "");
-    const supplyHasBlank = supplyOrders.some(v => v === "");
-
-    // 任一侧存在空值：自动关闭并提醒
-    if(demandHasBlank || supplyHasBlank){
-      const side = [];
-      if(demandHasBlank) side.push("需求侧");
-      if(supplyHasBlank) side.push("供给侧");
-      await showReviewModal({
-        kicker: "订单号匹配已调整",
-        title: "检测到空订单号，已自动关闭匹配",
-        main: `检测到${side.join("和")}“销售采购订单号”存在空值。`,
-        sub: "本次将不按订单号匹配，需求侧与供给侧都会忽略订单号字段。",
-        confirmText: "我知道了",
-        showCancel: false
+      div.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter") e.preventDefault();
       });
-      return false;
+      td.appendChild(div);
+      return td;
     }
 
-    const currentText = currentEnabled ? "已开启" : "已关闭";
-    const enable = await showReviewModal({
-      kicker: "订单号匹配审核",
-      title: "是否开启“按销售采购订单号匹配”",
-      main: `需求侧与供给侧订单号均已填写。\n当前状态：${currentText}`,
-      sub: "开启后只会消耗同订单号库存；关闭则忽略订单号，按型号/颜色/规格分配。",
-      confirmText: "开启匹配",
-      cancelText: "关闭匹配"
-    });
-    return enable;
-  }
-  async function reviewSpecStrictSwitch(currentEnabled){
-    const currentText = currentEnabled ? "已开启" : "已关闭";
-    const enable = await showReviewModal({
-      kicker: "同规格审核",
-      title: "是否开启“只允许同规格裂变”",
-      main: `当前状态：${currentText}`,
-      sub: "开启：严格同规格分配。\n关闭：同规格先跑完（亚马逊6/4或100%）再跨规格补缺；同型号同颜色下有日规缺口时，美规结余优先留给日规。",
-      confirmText: "开启",
-      cancelText: "关闭"
-    });
-    return enable;
-  }
-  function mapSiteForExport(site){
-    const raw = String(site ?? "").trim();
-    const key = raw.toUpperCase();
-    const oneThreeSites = new Set(["DE","ES","IT","FR","US","UK","MX","CA"]);
-    if(oneThreeSites.has(key)) return `自营一三部${key}`;
-    if(key === "JP") return "自营二七部JP";
-    if(raw === "未分配/留库存") return "自营一三部JP";
-    return raw;
-  }
+    function buildGrid(tableId, columns, initialRows=50){
+      const table = $(tableId);
+      table.innerHTML = "";
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      columns.forEach(c=>{
+        const th = document.createElement("th");
+        th.textContent = c;
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
 
-  function toPriorityValue(raw){
-    if(raw == null || raw === "") return Number.POSITIVE_INFINITY;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
-  }
-  function sortByPriority(rows, priorityDir){
-    const asc = priorityDir === "asc";
-    return [...rows].sort((a,b)=>{
-      const ap = toPriorityValue(a.__prio);
-      const bp = toPriorityValue(b.__prio);
-      if(ap !== bp) return asc ? (ap - bp) : (bp - ap);
-      return (a.__idx ?? 0) - (b.__idx ?? 0);
-    });
-  }
-
-  function validateSupplyRows(supplyRows){
-    const hasAnyStatus = supplyRows.some(r => String(r["库存状态"] ?? "").trim() !== "");
-    const ignoreStatus = !hasAnyStatus;
-    const validRows = [];
-    const skippedRows = [];
-
-    for(let i=0;i<supplyRows.length;i++){
-      const r = supplyRows[i];
-      const raw = String(r["库存状态"] ?? "").trim();
-      if(!raw){
-        if(ignoreStatus){
-          validRows.push(r);
-        }else{
-          skippedRows.push(i + 1);
+      const tbody = document.createElement("tbody");
+      for(let r=0;r<initialRows;r++){
+        const tr = document.createElement("tr");
+        for(let c=0;c<columns.length;c++){
+          tr.appendChild(createGridCell(r, c, tableId, columns));
         }
-        continue;
+        tbody.appendChild(tr);
       }
-      validRows.push(r);
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      resetGridMeta(tableId);
     }
-    return { validRows, skippedRows, ignoreStatus };
-  }
-  function validateDemandRows(demandRows, orderMatchEnabled){
-    if(!orderMatchEnabled) return;
-    for(let i=0;i<demandRows.length;i++){
-      const r = demandRows[i];
-      const raw = String(r["销售采购订单号"] ?? "").trim();
-      if(!raw) throw new Error(`需求明细：第${i+1}行“销售采购订单号”为空（开关=开时必须有值）。`);
-    }
-  }
-
-  function makeSupplyPool(supplyRows){
-    return supplyRows.map((r, idx)=>({
-      __idx: idx,
-      order:  (r["销售采购订单号"] ?? r["仓库名称"] ?? "").trim(),
-      mat:    (r["物料编码"] ?? "").trim(),
-      status: normStockStatus(r["库存状态"]),
-      model:  normKey(r["销售型号"] ?? r["自营销售型号"] ?? ""),
-      color:  (r["颜色"] ?? r["颜色简易版"] ?? "").trim(),
-      spec:   normSpec(r["规格"] ?? r["充电器版本"] ?? ""),
-      qtyLeft: toInt(r["求和项:需求数量"] ?? r["求和项:可用量(主单位)"] ?? 0),
-    })).filter(x => x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
-  }
-
-  // ✅同一匹配条件下：先吃“在库”，再吃“在途”，最后吃其他状态；若忽略库存状态则直接按顺序吃
-  function consumeFromSupply(pool, matchFn, qtyNeed, ignoreStatus=false){
-    const allocs = [];
-    let need = toInt(qtyNeed);
-    if(need <= 0) return allocs;
-
-    if(ignoreStatus){
-      for(const s of pool){
-        if(need <= 0) break;
-        if(s.qtyLeft <= 0) continue;
-        if(!matchFn(s)) continue;
-        const take = Math.min(need, s.qtyLeft);
-        s.qtyLeft -= take;
-        need -= take;
-        allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+    function addRows(tableId, columns, n=50){
+      const table = $(tableId);
+      const tbody = table.querySelector("tbody");
+      const startR = tbody.children.length;
+      for(let r=0;r<n;r++){
+        const tr = document.createElement("tr");
+        for(let c=0;c<columns.length;c++){
+          tr.appendChild(createGridCell(startR + r, c, tableId, columns));
+        }
+        tbody.appendChild(tr);
       }
+      updateGridMeta(tableId, columns);
+    }
+    function clearGrid(tableId){
+      $(tableId).querySelectorAll(".cell").forEach(cell=>setCellText(cell, ""));
+      resetGridMeta(tableId);
+    }
+    function ensureRows(tableId, columns, needRows){
+      const tbody = $(tableId).querySelector("tbody");
+      const cur = tbody.children.length;
+      if(needRows > cur) addRows(tableId, columns, needRows - cur);
+    }
+    function parseClipboardGrid(text){
+      const rows = text.replace(/\r/g,"").split("\n");
+      if(rows.length && rows[rows.length-1]==="") rows.pop();
+      return rows.map(line => line.split("\t"));
+    }
+    function onPasteIntoGrid(e, tableId, columns){
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData("text");
+      const matrix = parseClipboardGrid(text);
+      if(matrix.length===0) return;
+
+      const active = document.activeElement;
+      if(!active || !active.classList.contains("cell")) return;
+
+      const r0 = Number(active.dataset.r);
+      const c0 = Number(active.dataset.c);
+
+      ensureRows(tableId, columns, r0 + matrix.length);
+
+      const tbody = $(tableId).querySelector("tbody");
+      let pastedCols = 0;
+      for(let r=0;r<matrix.length;r++){
+        const row = matrix[r];
+        pastedCols = Math.max(pastedCols, row.length);
+        const tr = tbody.children[r0 + r];
+        if(!tr) continue;
+        const cells = tr.querySelectorAll(".cell");
+        for(let c=0;c<row.length;c++){
+          const tc = c0 + c;
+          if(tc >= columns.length) break;
+          setCellText(cells[tc], row[c]);
+        }
+      }
+      recordGridPaste(tableId, matrix.length, Math.min(columns.length - c0, pastedCols));
+    }
+    function readGridData(tableId, columns){
+      const tbody = $(tableId).querySelector("tbody");
+      const rows = [];
+      for(const tr of tbody.children){
+        const obj = {};
+        let allEmpty = true;
+        const cells = tr.querySelectorAll(".cell");
+        columns.forEach((col, idx)=>{
+          const v = (cells[idx]?.textContent ?? "").trim();
+          obj[col] = v;
+          if(v !== "") allEmpty = false;
+        });
+        if(!allEmpty) rows.push(obj);
+      }
+      return rows;
+    }
+    function fillGridFromObjects(tableId, columns, data){
+      clearGrid(tableId);
+      ensureRows(tableId, columns, Math.max(50, data.length));
+      const tbody = $(tableId).querySelector("tbody");
+      for(let r=0;r<data.length;r++){
+        const tr = tbody.children[r];
+      const cells = tr.querySelectorAll(".cell");
+      for(let c=0;c<columns.length;c++){
+        setCellText(cells[c], data[r][columns[c]] ?? "");
+      }
+    }
+    updateGridMeta(tableId, columns);
+  }
+
+    function renderTable(containerId, rows){
+      const wrap = $(containerId);
+      if(!rows || rows.length===0){
+        wrap.innerHTML = '<div class="sub">空</div>';
+        return;
+      }
+      const cols = Object.keys(rows[0]);
+      const thead = `<tr>${cols.map(c=>`<th>${escapeHtml(c)}</th>`).join("")}</tr>`;
+      const tbody = rows.map(r=>`<tr>${cols.map(c=>`<td><div class="cell" style="border:0;box-shadow:none;background:#fff" contenteditable="false">${escapeHtml(String(r[c]??""))}</div></td>`).join("")}</tr>`).join("");
+      wrap.innerHTML = `<div class="sheet-wrap"><div class="sheet-scroll" style="max-height:420px"><table class="sheet"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div></div>`;
+    }
+
+    function rowsToTSV(rows, cols){
+      if(!rows || rows.length===0) return "";
+      const c = cols && cols.length ? cols : Object.keys(rows[0]);
+      const lines = [];
+      lines.push(c.join("\t"));
+      for(const r of rows){
+        lines.push(c.map(k => String(r[k]??"")).join("\t"));
+      }
+      return lines.join("\n");
+    }
+    function downloadText(filename, text, mime){
+      const blob = new Blob([text], {type: mime});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+    function enableDownloads(enabled){
+      $("btnDownloadTSV").disabled = !enabled;
+      $("btnDownloadXLSX").disabled = !enabled;
+    }
+    async function readExcelFile(file){
+      if(!window.XLSX) throw new Error("XLSX库未加载：无法导出XLSX（可用TSV下载）。");
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type:"array"});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      return XLSX.utils.sheet_to_json(ws, {defval:""});
+    }
+    function applySheetFont(ws, fontName, fontSize){
+      if(!ws || !ws["!ref"] || !window.XLSX?.utils) return;
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+      for(let r = range.s.r; r <= range.e.r; r++){
+        for(let c = range.s.c; c <= range.e.c; c++){
+          const addr = XLSX.utils.encode_cell({r, c});
+          const cell = ws[addr];
+          if(!cell) continue;
+          const s = cell.s || {};
+          const f = s.font || {};
+          cell.s = { ...s, font: { ...f, name: fontName, sz: fontSize } };
+        }
+      }
+    }
+    function applyWorkbookFont(wb, fontName, fontSize){
+      if(!wb || !wb.SheetNames || !wb.Sheets) return;
+      for(const name of wb.SheetNames){
+        applySheetFont(wb.Sheets[name], fontName, fontSize);
+      }
+    }
+
+    const reviewModalState = {
+      resolve: null,
+      keyHandler: null
+    };
+    function closeReviewModal(result){
+      if(!reviewModalState.resolve) return;
+      const done = reviewModalState.resolve;
+      reviewModalState.resolve = null;
+      if(reviewModalState.keyHandler){
+        document.removeEventListener("keydown", reviewModalState.keyHandler);
+        reviewModalState.keyHandler = null;
+      }
+      $("reviewModalMask").classList.add("hidden");
+      document.body.style.overflow = "";
+      done(!!result);
+    }
+    function showReviewModal(opts){
+      const {
+        kicker = "生成前审核",
+        title = "请确认",
+        main = "",
+        sub = "",
+        confirmText = "确认",
+        cancelText = "取消",
+        showCancel = true
+      } = (opts || {});
+
+      if(reviewModalState.resolve) closeReviewModal(false);
+
+      $("reviewModalKicker").textContent = kicker;
+      $("reviewModalTitle").textContent = title;
+      $("reviewModalMain").innerHTML = escapeHtml(main).replace(/\n/g, "<br>");
+
+      if(sub){
+        $("reviewModalSub").classList.remove("hidden");
+        $("reviewModalSub").innerHTML = escapeHtml(sub).replace(/\n/g, "<br>");
+      }else{
+        $("reviewModalSub").classList.add("hidden");
+        $("reviewModalSub").textContent = "";
+      }
+
+      $("reviewModalConfirm").textContent = confirmText;
+      $("reviewModalCancel").textContent = cancelText;
+      $("reviewModalCancel").classList.toggle("hidden", !showCancel);
+
+      $("reviewModalMask").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      setTimeout(()=>$("reviewModalConfirm").focus(), 0);
+
+      return new Promise((resolve)=>{
+        reviewModalState.resolve = resolve;
+        reviewModalState.keyHandler = (e)=>{
+          if(e.key === "Escape") closeReviewModal(false);
+          if(e.key === "Enter") closeReviewModal(true);
+        };
+        document.addEventListener("keydown", reviewModalState.keyHandler);
+      });
+    }
+    $("reviewModalMask").addEventListener("click", (e)=>{
+      if(e.target === $("reviewModalMask")) closeReviewModal(false);
+    });
+    $("reviewModalCancel").addEventListener("click", ()=>closeReviewModal(false));
+    $("reviewModalConfirm").addEventListener("click", ()=>closeReviewModal(true));
+
+    async function reviewOrderMatchSwitch(demRows, supRows, currentEnabled){
+      const demandOrders = demRows.map(r => String(r["销售采购订单号"] ?? "").trim());
+      const supplyOrders = supRows.map(r => String(r["销售采购订单号"] ?? "").trim());
+      const demandHasBlank = demandOrders.some(v => v === "");
+      const supplyHasBlank = supplyOrders.some(v => v === "");
+
+      // 任一侧存在空值：自动关闭并提醒
+      if(demandHasBlank || supplyHasBlank){
+        const side = [];
+        if(demandHasBlank) side.push("需求侧");
+        if(supplyHasBlank) side.push("供给侧");
+        await showReviewModal({
+          kicker: "订单号",
+          title: "本次不按订单号匹配",
+          main: `${side.join("和")}存在空订单号。`,
+          sub: "本次忽略订单号，只按型号/颜色/规格分配。",
+          confirmText: "知道了",
+          showCancel: false
+        });
+        return false;
+      }
+
+      const currentText = currentEnabled ? "当前默认：开启" : "当前默认：关闭";
+      const enable = await showReviewModal({
+        kicker: "订单号",
+        title: "本次是否按订单号匹配？",
+        main: `两边订单号都已填写。\n${currentText}`,
+        sub: "开启：在库/在途/其他状态统一按订单号。关闭：全部忽略订单号。",
+        confirmText: "按订单号",
+        cancelText: "忽略订单号"
+      });
+      return enable;
+    }
+    async function reviewSpecStrictSwitch(currentEnabled){
+      const currentText = currentEnabled ? "当前默认：开启" : "当前默认：关闭";
+      const enable = await showReviewModal({
+        kicker: "规格",
+        title: "本次是否只按同规格分配？",
+        main: currentText,
+        sub: "开启：只分同规格。关闭：同规格跑完后再补缺，美规结余先补日规。",
+        confirmText: "只同规格",
+        cancelText: "允许补缺"
+      });
+      return enable;
+    }
+    function mapSiteForExport(site){
+      const raw = String(site ?? "").trim();
+      const key = raw.toUpperCase();
+      const oneThreeSites = new Set(["DE","ES","IT","FR","US","UK","MX","CA"]);
+      if(oneThreeSites.has(key)) return `自营一三部${key}`;
+      if(key === "JP") return "自营二七部JP";
+      if(raw === "未分配/留库存") return "自营一三部JP";
+      return raw;
+    }
+
+    function toPriorityValue(raw){
+      if(raw == null || raw === "") return Number.POSITIVE_INFINITY;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+    }
+    function sortByPriority(rows, priorityDir){
+      const asc = priorityDir === "asc";
+      return [...rows].sort((a,b)=>{
+        const ap = toPriorityValue(a.__prio);
+        const bp = toPriorityValue(b.__prio);
+        if(ap !== bp) return asc ? (ap - bp) : (bp - ap);
+        return (a.__idx ?? 0) - (b.__idx ?? 0);
+      });
+    }
+
+    function validateSupplyRows(supplyRows){
+      const hasAnyStatus = supplyRows.some(r => String(r["库存状态"] ?? "").trim() !== "");
+      const hasInStock = supplyRows.some(r => String(r["库存状态"] ?? "").trim() === "在库");
+      const hasInTransit = supplyRows.some(r => String(r["库存状态"] ?? "").trim() === "在途");
+      const ignoreStatus = !hasAnyStatus || !(hasInStock && hasInTransit);
+      const validRows = [];
+      const skippedRows = [];
+
+      for(let i=0;i<supplyRows.length;i++){
+        const r = supplyRows[i];
+        const raw = String(r["库存状态"] ?? "").trim();
+        if(!raw){
+          if(ignoreStatus){
+            validRows.push(r);
+          }else{
+            skippedRows.push(i + 1);
+          }
+          continue;
+        }
+        validRows.push(r);
+      }
+      return { validRows, skippedRows, ignoreStatus, hasAnyStatus, hasInStock, hasInTransit };
+    }
+    function validateDemandRows(demandRows, orderMatchEnabled){
+      if(!orderMatchEnabled) return;
+      for(let i=0;i<demandRows.length;i++){
+        const r = demandRows[i];
+        const raw = String(r["销售采购订单号"] ?? "").trim();
+        if(!raw) throw new Error(`需求明细：第${i+1}行“销售采购订单号”为空（开关=开时必须有值）。`);
+      }
+    }
+
+    function makeSupplyPool(supplyRows){
+      return supplyRows.map((r, idx)=>({
+        __idx: idx,
+        order:  (r["销售采购订单号"] ?? r["仓库名称"] ?? "").trim(),
+        mat:    (r["物料编码"] ?? "").trim(),
+        status: normStockStatus(r["库存状态"]),
+        model:  normKey(r["销售型号"] ?? r["自营销售型号"] ?? ""),
+        color:  (r["颜色"] ?? r["颜色简易版"] ?? "").trim(),
+        spec:   normSpec(r["规格"] ?? r["充电器版本"] ?? ""),
+        qtyLeft: toInt(r["求和项:需求数量"] ?? r["求和项:可用量(主单位)"] ?? 0),
+      })).filter(x => x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
+    }
+
+    function matchStatusPhase(status, statusPhase){
+      if(statusPhase === "all") return true;
+      if(statusPhase === "inStock") return status === "在库";
+      if(statusPhase === "inTransit") return status === "在途";
+      if(statusPhase === "other") return status !== "在库" && status !== "在途";
+      return true;
+    }
+
+    // ignoreStatus=true: 完全按原顺序吃；statusPhase!=all: 只消耗当前阶段允许的库存状态
+    function consumeFromSupply(pool, matchFn, qtyNeed, options={}){
+      const { ignoreStatus=false, statusPhase="all" } = options;
+      const allocs = [];
+      let need = toInt(qtyNeed);
+      if(need <= 0) return allocs;
+
+      if(ignoreStatus){
+        for(const s of pool){
+          if(need <= 0) break;
+          if(s.qtyLeft <= 0) continue;
+          if(!matchFn(s)) continue;
+          const take = Math.min(need, s.qtyLeft);
+          s.qtyLeft -= take;
+          need -= take;
+          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+        }
+        return allocs;
+      }
+
+      if(statusPhase !== "all"){
+        for(const s of pool){
+          if(need <= 0) break;
+          if(s.qtyLeft <= 0) continue;
+          if(!matchStatusPhase(s.status, statusPhase)) continue;
+          if(!matchFn(s)) continue;
+
+          const take = Math.min(need, s.qtyLeft);
+          s.qtyLeft -= take;
+          need -= take;
+
+          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+        }
+        return allocs;
+      }
+
+      function passByStatus(statusMatch){
+        for(const s of pool){
+          if(need <= 0) break;
+          if(s.qtyLeft <= 0) continue;
+          if(!statusMatch(s.status)) continue;
+          if(!matchFn(s)) continue;
+
+          const take = Math.min(need, s.qtyLeft);
+          s.qtyLeft -= take;
+          need -= take;
+
+          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+        }
+      }
+      passByStatus((status)=>status === "在库");
+      passByStatus((status)=>status === "在途");
+      passByStatus((status)=>status !== "在库" && status !== "在途");
       return allocs;
     }
 
-    function passByStatus(statusMatch){
-      for(const s of pool){
-        if(need <= 0) break;
-        if(s.qtyLeft <= 0) continue;
-        if(!statusMatch(s.status)) continue;
-        if(!matchFn(s)) continue;
-
-        const take = Math.min(need, s.qtyLeft);
-        s.qtyLeft -= take;
-        need -= take;
-
-        allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+    function consolidateOut(rows){
+      const m = new Map();
+      for(const r of rows){
+        const k = [r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
+        const cur = m.get(k) || { ...r, "需求数量": 0 };
+        cur["需求数量"] = toInt(cur["需求数量"]) + toInt(r["需求数量"]);
+        m.set(k, cur);
       }
-    }
-    passByStatus((status)=>status === "在库");
-    passByStatus((status)=>status === "在途");
-    passByStatus((status)=>status !== "在库" && status !== "在途");
-    return allocs;
-  }
-
-  function consolidateOut(rows){
-    const m = new Map();
-    for(const r of rows){
-      const k = [r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
-      const cur = m.get(k) || { ...r, "需求数量": 0 };
-      cur["需求数量"] = toInt(cur["需求数量"]) + toInt(r["需求数量"]);
-      m.set(k, cur);
-    }
-    return Array.from(m.values());
-  }
-
-  function runAllocation(demandRowsRaw, supplyRowsRaw, opts){
-    const {priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled} = opts;
-    const siteName = (unassignedSite || "未分配/留库存").trim() || "未分配/留库存";
-    const quality = [];
-
-    function addQuality(type, rowNo, detail){
-      quality.push({
-        "类型": type,
-        "行号": rowNo == null ? "-" : String(rowNo),
-        "说明": detail
-      });
+      return Array.from(m.values());
     }
 
-    validateDemandRows(demandRowsRaw, orderMatchEnabled);
-    const { validRows: validSupplyRows, skippedRows, ignoreStatus } = validateSupplyRows(supplyRowsRaw);
-    if(ignoreStatus){
-      addQuality("库存状态忽略", "-", "库存状态整列为空，已忽略该列参与分配。");
-    }
-    for(const rowNo of skippedRows){
-      addQuality("跳过供给行", rowNo, "库存状态为空，已跳过。");
-    }
+    function runAllocation(demandRowsRaw, supplyRowsRaw, opts){
+      const {priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled} = opts;
+      const siteName = (unassignedSite || "未分配/留库存").trim() || "未分配/留库存";
+      const quality = [];
 
-    const demand = [];
-    for(let idx=0; idx<demandRowsRaw.length; idx++){
-      const r = demandRowsRaw[idx];
-      const d = {
-        __idx: idx,
-        order: (r["销售采购订单号"] ?? "").trim(),
-        model: normKey(r["型号"]),
-        color: (r["颜色"] ?? "").trim(),
-        site: (r["站点（平台）"] ?? "").trim(),
-        demandQty: toInt(r["SI数量"]),
-        spec: normSpec(r["需求规格"]),
-        platform: (r["平台"] ?? "").trim(),
-        box: toInt(r["箱规信息"]),
-        __prio: (r["优先级"] ?? "").trim(),
-      };
-
-      const missing = [];
-      if(!d.model) missing.push("型号为空");
-      if(!d.site) missing.push("站点（平台）为空");
-      if(!d.spec) missing.push("需求规格为空");
-      if(missing.length){
-        addQuality("跳过需求行", idx + 1, missing.join("，"));
-        continue;
-      }
-      if(d.__prio !== "" && !Number.isFinite(Number(d.__prio))){
-        addQuality("优先级修正", idx + 1, `优先级“${d.__prio}”不是数字，已按最低优先级处理。`);
-      }
-      demand.push(d);
-    }
-
-    const supplyPool = makeSupplyPool(validSupplyRows);
-    const demandAlloc = new Map();
-    let out = [];
-
-    function addOut(site, alloc){
-      out.push({
-        "库存状态": alloc.status,
-        "销售采购订单号": alloc.order,
-        "物料编码": alloc.mat,
-        "销售型号": alloc.model,
-        "颜色": alloc.color,
-        "站点": site,
-        "规格": alloc.spec,
-        "需求数量": alloc.qty,
-      });
-    }
-    function bump(dIdx, qty){
-      demandAlloc.set(dIdx, (demandAlloc.get(dIdx)||0) + toInt(qty));
-    }
-    function got(d){ return demandAlloc.get(d.__idx) || 0; }
-    function miss(d){ return Math.max(0, d.demandQty - got(d)); }
-    function orderOk(s, d){ return !orderMatchEnabled || (s.order && d.order && s.order === d.order); }
-    function hasPendingDayDemandForSupply(s){
-      for(const d of demand){
-        if(d.spec !== "日") continue;
-        if(d.model !== s.model || d.color !== s.color) continue;
-        if(orderMatchEnabled && (!s.order || !d.order || s.order !== d.order)) continue;
-        if(miss(d) > 0) return true;
-      }
-      return false;
-    }
-
-    function allocStrictForDemand(d, qtyPlan){
-      let need = toInt(qtyPlan);
-      if(need <= 0) return 0;
-
-      const strictAllocs = consumeFromSupply(
-        supplyPool,
-        (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color && s.spec===d.spec,
-        need,
-        ignoreStatus
-      );
-      for(const a of strictAllocs){
-        addOut(d.site, a);
-        bump(d.__idx, a.qty);
-        need -= a.qty;
-      }
-      return toInt(qtyPlan) - need;
-    }
-
-    function allocCrossForDemand(d, qtyPlan){
-      let need = toInt(qtyPlan);
-      if(need <= 0) return 0;
-
-      // 日规缺口优先吃美规
-      if(normSpec(d.spec) === "日"){
-        const usFirst = consumeFromSupply(
-          supplyPool,
-          (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color && normSpec(s.spec)==="美",
-          need,
-          ignoreStatus
-        );
-        for(const a of usFirst){
-          addOut(d.site, a);
-          bump(d.__idx, a.qty);
-          need -= a.qty;
-        }
-        if(need <= 0) return toInt(qtyPlan);
-      }
-
-      // 任意规格兜底（同型号同颜色）
-      // 非“日规”需求跨规格时：
-      // 若仍有日规缺口，美规结余优先留给日规补缺；
-      // 其他规格库存按正常优先级分配。
-      const anySpec = consumeFromSupply(
-        supplyPool,
-        (s)=>{
-          if(!(orderOk(s,d) && s.model===d.model && s.color===d.color)) return false;
-          if(d.spec !== "日" && normSpec(s.spec) === "美" && hasPendingDayDemandForSupply(s)) return false;
-          return true;
-        },
-        need,
-        ignoreStatus
-      );
-      for(const a of anySpec){
-        addOut(d.site, a);
-        bump(d.__idx, a.qty);
-        need -= a.qty;
-      }
-      return toInt(qtyPlan) - need;
-    }
-
-    function allocQtyForDemand(d, qtyPlan, allowCrossSpec){
-      const target = toInt(qtyPlan);
-      if(target <= 0) return 0;
-      const strictDone = allocStrictForDemand(d, target);
-      const need = Math.max(0, target - strictDone);
-      if(need <= 0 || !allowCrossSpec) return strictDone;
-      return strictDone + allocCrossForDemand(d, need);
-    }
-
-    function allocRegularDemand(d){
-      const need = miss(d);
-      if(need <= 0) return;
-      allocQtyForDemand(d, need, !specStrict);
-    }
-
-    function calcAmazon60Target(d){
-      const total = toInt(d.demandQty);
-      if(total <= 0) return 0;
-
-      const raw60 = Math.ceil(total * 0.6);
-      if(!boxEnabled) return Math.min(total, raw60);
-
-      const box = toInt(d.box);
-      if(box <= 0) return Math.min(total, raw60);
-
-      // 60%小于箱规时，直接按整条需求处理（用户规则）
-      if(raw60 < box) return total;
-      return Math.min(total, roundUpBox(raw60, box, true));
-    }
-
-    function calcAmazon40Target(d){
-      const total = toInt(d.demandQty);
-      if(total <= 0) return 0;
-      return Math.max(0, total - calcAmazon60Target(d));
-    }
-
-    function allocAmazonStrictStep(d, plannedQty){
-      const remain = miss(d);
-      if(remain <= 0) return;
-      const plan = Math.min(toInt(plannedQty), remain);
-      if(plan <= 0) return;
-      allocStrictForDemand(d, plan);
-    }
-
-    function allocAmazonCrossAfterStrict(d){
-      const need = miss(d);
-      if(need <= 0) return;
-      allocCrossForDemand(d, need);
-    }
-
-    function groupAmazonBySpec(rows){
-      const groups = new Map();
-      for(const d of rows){
-        const key = orderMatchEnabled
-          ? [d.order, d.model, d.color, d.spec].join("||")
-          : [d.model, d.color, d.spec].join("||");
-        if(!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(d);
-      }
-      return Array.from(groups.values());
-    }
-
-    function allocSmallPhase(smallSorted){
-      for(const d of smallSorted){ allocRegularDemand(d); }
-    }
-
-    function allocAmazonPhase(amazonSorted){
-      const groups = groupAmazonBySpec(amazonSorted);
-
-      if(amazonMode === "100"){
-        for(const g of groups){
-          for(const d of g){ allocAmazonStrictStep(d, d.demandQty); }
-        }
-      }else{
-        for(const g of groups){
-          for(const d of g){ allocAmazonStrictStep(d, calcAmazon60Target(d)); }
-        }
-        for(const g of groups){
-          for(const d of g){ allocAmazonStrictStep(d, calcAmazon40Target(d)); }
-        }
-      }
-
-      // 同规格(60%+40%或100%)跑完后，才允许跨规格互补
-      if(!specStrict){
-        for(const g of groups){
-          for(const d of g){ allocAmazonCrossAfterStrict(d); }
-        }
-      }
-    }
-
-    function allocOtherPhase(otherSorted){
-      for(const d of otherSorted){ allocRegularDemand(d); }
-    }
-
-    const small  = demand.filter(d => d.platform === "小平台");
-    const amazon = demand.filter(d => d.platform === "亚马逊");
-    const other  = demand.filter(d => d.platform !== "小平台" && d.platform !== "亚马逊");
-
-    const smallSorted  = sortByPriority(small, priorityDir);
-    const amazonSorted = sortByPriority(amazon, priorityDir);
-    const otherSorted  = sortByPriority(other, priorityDir);
-
-    if(smallFirst){
-      allocSmallPhase(smallSorted);
-      allocAmazonPhase(amazonSorted);
-      allocOtherPhase(otherSorted);
-    }else{
-      const globalSorted = sortByPriority(demand, priorityDir);
-      if(amazonMode === "100"){
-        for(const d of globalSorted){
-          if(d.platform === "亚马逊") allocAmazonStrictStep(d, d.demandQty);
-          else allocRegularDemand(d);
-        }
-        if(!specStrict){
-          const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
-          const groups = groupAmazonBySpec(globalAmazon);
-          for(const g of groups){
-            for(const d of g){ allocAmazonCrossAfterStrict(d); }
-          }
-        }
-      }else{
-        for(const d of globalSorted){
-          if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon60Target(d));
-          else allocRegularDemand(d);
-        }
-        for(const d of globalSorted){
-          if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon40Target(d));
-        }
-        if(!specStrict){
-          const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
-          const groups = groupAmazonBySpec(globalAmazon);
-          for(const g of groups){
-            for(const d of g){ allocAmazonCrossAfterStrict(d); }
-          }
-        }
-      }
-    }
-
-    const unmetFinal = [];
-    for(const d of demand){
-      const m = miss(d);
-      if(m > 0){
-        unmetFinal.push({
-          "销售采购订单号": d.order,
-          "型号": d.model, "颜色": d.color, "站点": d.site, "规格": d.spec, "平台": d.platform,
-          "原需求": d.demandQty, "已分配": got(d), "仍缺口": m, "优先级": d.__prio, "箱规": d.box
+      function addQuality(type, rowNo, detail){
+        quality.push({
+          "类型": type,
+          "行号": rowNo == null ? "-" : String(rowNo),
+          "说明": detail
         });
       }
-    }
 
-    const left = supplyPool.filter(s => s.qtyLeft > 0).map(s => ({
-      "库存状态": s.status,
-      "销售采购订单号": s.order,
-      "物料编码": s.mat,
-      "销售型号": s.model,
-      "颜色": s.color,
-      "规格": s.spec,
-      "剩余数量": s.qtyLeft
-    }));
+      validateDemandRows(demandRowsRaw, orderMatchEnabled);
+      const { validRows: validSupplyRows, skippedRows, ignoreStatus, hasAnyStatus, hasInStock, hasInTransit } = validateSupplyRows(supplyRowsRaw);
+      if(ignoreStatus){
+        if(!hasAnyStatus){
+          addQuality("库存状态忽略", "-", "库存状态整列为空，已忽略该列参与分配。");
+        }else if(!(hasInStock && hasInTransit)){
+          addQuality("库存状态未区分", "-", "库存状态列未同时出现“在库/在途”，本次按原逻辑处理，不区分两者。");
+        }
+      }
+      for(const rowNo of skippedRows){
+        addQuality("跳过供给行", rowNo, "库存状态为空，已跳过。");
+      }
 
-    // 剩余追加进裂变输出（对账：总量不丢）
-    for(const s of supplyPool){
-      if(s.qtyLeft > 0){
+      const demand = [];
+      for(let idx=0; idx<demandRowsRaw.length; idx++){
+        const r = demandRowsRaw[idx];
+        const d = {
+          __idx: idx,
+          order: (r["销售采购订单号"] ?? "").trim(),
+          model: normKey(r["型号"]),
+          color: (r["颜色"] ?? "").trim(),
+          site: (r["站点（平台）"] ?? "").trim(),
+          demandQty: toInt(r["SI数量"]),
+          spec: normSpec(r["需求规格"]),
+          platform: (r["平台"] ?? "").trim(),
+          box: toInt(r["箱规信息"]),
+          __prio: (r["优先级"] ?? "").trim(),
+        };
+
+        const missing = [];
+        if(!d.model) missing.push("型号为空");
+        if(!d.site) missing.push("站点（平台）为空");
+        if(!d.spec) missing.push("需求规格为空");
+        if(missing.length){
+          addQuality("跳过需求行", idx + 1, missing.join("，"));
+          continue;
+        }
+        if(d.__prio !== "" && !Number.isFinite(Number(d.__prio))){
+          addQuality("优先级修正", idx + 1, `优先级“${d.__prio}”不是数字，已按最低优先级处理。`);
+        }
+        demand.push(d);
+      }
+
+      const supplyPool = makeSupplyPool(validSupplyRows);
+      const demandAlloc = new Map();
+      const stageAlloc = new Map();
+      let out = [];
+
+      function addOut(site, alloc){
         out.push({
-          "库存状态": s.status,
-          "销售采购订单号": s.order,
-          "物料编码": s.mat,
-          "销售型号": s.model,
-          "颜色": s.color,
-          "站点": siteName,
-          "规格": s.spec,
-          "需求数量": s.qtyLeft
+          "库存状态": alloc.status,
+          "销售采购订单号": alloc.order,
+          "物料编码": alloc.mat,
+          "销售型号": alloc.model,
+          "颜色": alloc.color,
+          "站点": site,
+          "规格": alloc.spec,
+          "需求数量": alloc.qty,
         });
       }
-    }
-
-    if(mergeOut){
-      out = consolidateOut(out);
-    }
-
-    return { out, unmet: unmetFinal, left, quality };
-  }
-
-  document.querySelectorAll(".tab").forEach(t=>{
-    t.addEventListener("click", ()=>{
-      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-      t.classList.add("active");
-      const tab = t.dataset.tab;
-      $("panelGrid").classList.toggle("hidden", tab!=="grid");
-      $("panelExcel").classList.toggle("hidden", tab!=="excel");
-      setStatus("切换模式完成。", true);
-    });
-  });
-
-  buildGrid("gridDemand", DEMAND_COLS, 50);
-  buildGrid("gridSupply", SUPPLY_COLS, 50);
-
-  $("btnAddDemandRows").addEventListener("click", ()=>addRows("gridDemand", DEMAND_COLS, 50));
-  $("btnAddSupplyRows").addEventListener("click", ()=>addRows("gridSupply", SUPPLY_COLS, 50));
-  $("btnClearDemand").addEventListener("click", ()=>clearGrid("gridDemand"));
-  $("btnClearSupply").addEventListener("click", ()=>clearGrid("gridSupply"));
-
-  $("btnClearAll").addEventListener("click", ()=>{
-    clearGrid("gridDemand"); clearGrid("gridSupply");
-    $("fileDemand").value=""; $("fileSupply").value="";
-    $("outWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-    $("unmetWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-    $("leftWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-    $("qualityWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-    state.outRows = [];
-    state.unmetRows = [];
-    state.leftRows = [];
-    state.qualityRows = [];
-    enableDownloads(false);
-    setStatus("已清空。", true);
-  });
-
-  $("btnLoadSample").addEventListener("click", ()=>{
-    fillGridFromObjects("gridDemand", DEMAND_COLS, [
-      {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
-      {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
-      {"销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
-      {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
-    ]);
-    fillGridFromObjects("gridSupply", SUPPLY_COLS, [
-      {"销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
-      {"销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
-      {"销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
-    ]);
-    setStatus("已载入示例：同匹配条件先分在库再分在途；订单号匹配开关可控。", true);
-  });
-
-  async function loadExcelToGrid(){
-    const fD = $("fileDemand").files[0];
-    const fS = $("fileSupply").files[0];
-    if(!fD || !fS) throw new Error("请同时上传需求Excel和在途/库存Excel。");
-
-    const demJson = await readExcelFile(fD);
-    const supJson = await readExcelFile(fS);
-
-    const dem = demJson.map(r=>{ const o={}; DEMAND_COLS.forEach(c=>o[c]=r[c]??""); return o; })
-                       .filter(r=>DEMAND_COLS.some(c=>String(r[c]??"").trim()!==""));
-
-    const sup = supJson.map(r=>{
-      const o = {};
-      SUPPLY_COLS.forEach(c=>o[c]=r[c]??"");
-      o["仓库名称"] = r["仓库名称"] ?? "";
-      o["自营销售型号"] = r["自营销售型号"] ?? "";
-      o["颜色简易版"] = r["颜色简易版"] ?? "";
-      o["充电器版本"] = r["充电器版本"] ?? "";
-      o["求和项:可用量(主单位)"] = r["求和项:可用量(主单位)"] ?? "";
-      o["规格"] = r["规格"] ?? o["规格"] ?? "";
-      o["求和项:需求数量"] = r["求和项:需求数量"] ?? o["求和项:需求数量"] ?? "";
-      o["销售型号"] = r["销售型号"] ?? o["销售型号"] ?? "";
-      o["颜色"] = r["颜色"] ?? o["颜色"] ?? "";
-      o["销售采购订单号"] = r["销售采购订单号"] ?? o["销售采购订单号"] ?? "";
-      o["物料编码"] = r["物料编码"] ?? o["物料编码"] ?? "";
-      o["库存状态"] = r["库存状态"] ?? o["库存状态"] ?? "";
-      return o;
-    }).filter(r=>Object.keys(r).some(k=>String(r[k]??"").trim()!==""));
-
-    fillGridFromObjects("gridDemand", DEMAND_COLS, dem);
-    fillGridFromObjects("gridSupply", SUPPLY_COLS, sup.map(r=>{ const o={}; SUPPLY_COLS.forEach(c=>o[c]=r[c]??""); return o; }));
-    return {dem, sup};
-  }
-
-  $("btnRun").addEventListener("click", async ()=>{
-    try{
-      enableDownloads(false);
-
-      const priorityDir = $("priorityDir").value;
-      const amazonMode = $("amazonMode").value;
-      const smallFirst = $("smallFirst").value === "1";
-      let specStrict = $("specStrict").value === "1";
-      const boxEnabled = $("boxEnabled").value === "1";
-      let orderMatchEnabled = $("orderMatchEnabled").value === "1";
-      const unassignedSite = ($("unassignedSite").value || "未分配/留库存").trim();
-      const mergeOut = $("mergeOut").value === "1";
-
-      const activeTab = document.querySelector(".tab.active").dataset.tab;
-
-      let demRows = [];
-      let supRows = [];
-
-      if(activeTab === "excel"){
-        const res = await loadExcelToGrid();
-        demRows = res.dem; supRows = res.sup;
-      }else{
-        demRows = readGridData("gridDemand", DEMAND_COLS);
-        supRows = readGridData("gridSupply", SUPPLY_COLS);
+      function bump(dIdx, qty){
+        demandAlloc.set(dIdx, (demandAlloc.get(dIdx)||0) + toInt(qty));
+      }
+      function getStageAlloc(stageKey, dIdx){
+        return stageAlloc.get(`${stageKey}::${dIdx}`) || 0;
+      }
+      function bumpStageAlloc(stageKey, dIdx, qty){
+        const key = `${stageKey}::${dIdx}`;
+        stageAlloc.set(key, getStageAlloc(stageKey, dIdx) + toInt(qty));
+      }
+      function got(d){ return demandAlloc.get(d.__idx) || 0; }
+      function miss(d){ return Math.max(0, d.demandQty - got(d)); }
+      function orderOk(s, d){
+        if(!orderMatchEnabled) return true;
+        return s.order && d.order && s.order === d.order;
+      }
+      function sourceSpecHasOwnUnmetDemand(s, targetSpec=""){
+        for(const d of demand){
+          if(d.model !== s.model || d.color !== s.color) continue;
+          if(d.spec !== s.spec) continue;
+          if(d.spec === targetSpec) continue;
+          if(miss(d) > 0) return true;
+        }
+        return false;
+      }
+      function hasPendingDayDemandForSupply(s){
+        for(const d of demand){
+          if(d.spec !== "日") continue;
+          if(d.model !== s.model || d.color !== s.color) continue;
+          if(miss(d) > 0) return true;
+        }
+        return false;
+      }
+      function getStrictStatusPhases(){
+        return ignoreStatus ? ["all"] : ["inStock", "inTransit", "other"];
+      }
+      function getCrossStatusPhases(){
+        return ignoreStatus ? ["all"] : ["inStock", "inTransit", "other"];
       }
 
-      if(demRows.length===0) throw new Error("需求明细为空。");
-      if(supRows.length===0) throw new Error("在途/库存明细为空。");
+      function allocStrictForDemand(d, qtyPlan, stageKey=""){
+        const plan = toInt(qtyPlan);
+        const stageRemain = stageKey ? Math.max(0, plan - getStageAlloc(stageKey, d.__idx)) : plan;
+        let need = stageRemain;
+        if(need <= 0) return 0;
 
-      orderMatchEnabled = await reviewOrderMatchSwitch(demRows, supRows, orderMatchEnabled);
-      $("orderMatchEnabled").value = orderMatchEnabled ? "1" : "0";
+        for(const statusPhase of getStrictStatusPhases()){
+          if(need <= 0) break;
+          const strictAllocs = consumeFromSupply(
+            supplyPool,
+            (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color && s.spec===d.spec,
+            need,
+            { ignoreStatus, statusPhase }
+          );
+          for(const a of strictAllocs){
+            addOut(d.site, a);
+            bump(d.__idx, a.qty);
+            if(stageKey) bumpStageAlloc(stageKey, d.__idx, a.qty);
+            need -= a.qty;
+          }
+        }
+        return stageRemain - need;
+      }
 
-      specStrict = await reviewSpecStrictSwitch(specStrict);
-      $("specStrict").value = specStrict ? "1" : "0";
+      function allocCrossForDemand(d, qtyPlan){
+        let need = toInt(qtyPlan);
+        if(need <= 0) return 0;
 
-      const {out, unmet, left, quality} = runAllocation(demRows, supRows, {
-        priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled
+        function canUseCrossSource(s){
+          if(!(orderOk(s,d) && s.model===d.model && s.color===d.color)) return false;
+          if(s.spec !== d.spec && sourceSpecHasOwnUnmetDemand(s, d.spec)) return false;
+          return true;
+        }
+
+        for(const statusPhase of getCrossStatusPhases()){
+          if(need <= 0) break;
+
+          // 日规缺口优先吃美规
+          if(normSpec(d.spec) === "日"){
+            const usFirst = consumeFromSupply(
+              supplyPool,
+              (s)=> canUseCrossSource(s) && s.spec !== d.spec && normSpec(s.spec)==="美",
+              need,
+              { ignoreStatus, statusPhase }
+            );
+            for(const a of usFirst){
+              addOut(d.site, a);
+              bump(d.__idx, a.qty);
+              need -= a.qty;
+            }
+            if(need <= 0) break;
+          }
+
+          const anySpec = consumeFromSupply(
+            supplyPool,
+            (s)=>{
+              if(!canUseCrossSource(s)) return false;
+              if(s.spec === d.spec) return false;
+              if(d.spec !== "日" && normSpec(s.spec) === "美" && hasPendingDayDemandForSupply(s)) return false;
+              return true;
+            },
+            need,
+            { ignoreStatus, statusPhase }
+          );
+          for(const a of anySpec){
+            addOut(d.site, a);
+            bump(d.__idx, a.qty);
+            need -= a.qty;
+          }
+        }
+        return toInt(qtyPlan) - need;
+      }
+
+      function allocQtyForDemand(d, qtyPlan, allowCrossSpec){
+        const target = toInt(qtyPlan);
+        if(target <= 0) return 0;
+        const strictDone = allocStrictForDemand(d, target);
+        const need = Math.max(0, target - strictDone);
+        if(need <= 0 || !allowCrossSpec) return strictDone;
+        return strictDone + allocCrossForDemand(d, need);
+      }
+
+      function allocRegularDemand(d){
+        const need = miss(d);
+        if(need <= 0) return;
+        allocQtyForDemand(d, need, !specStrict);
+      }
+
+      function calcAmazon60Target(d){
+        const total = toInt(d.demandQty);
+        if(total <= 0) return 0;
+
+        const raw60 = Math.ceil(total * 0.6);
+        if(!boxEnabled) return Math.min(total, raw60);
+
+        const box = toInt(d.box);
+        if(box <= 0) return Math.min(total, raw60);
+
+        // 60%小于箱规时，直接按整条需求处理（用户规则）
+        if(raw60 < box) return total;
+        return Math.min(total, roundUpBox(raw60, box, true));
+      }
+
+      function calcAmazon40Target(d){
+        const total = toInt(d.demandQty);
+        if(total <= 0) return 0;
+        return Math.max(0, total - calcAmazon60Target(d));
+      }
+
+      function allocAmazonStrictStep(d, plannedQty, stageKey){
+        const remain = miss(d);
+        if(remain <= 0) return;
+        const plan = Math.min(toInt(plannedQty), remain);
+        if(plan <= 0) return;
+        allocStrictForDemand(d, plan, stageKey);
+      }
+
+      function allocAmazonCrossAfterStrict(d){
+        const need = miss(d);
+        if(need <= 0) return;
+        allocCrossForDemand(d, need);
+      }
+
+      function groupAmazonBySpec(rows){
+        const groups = new Map();
+        for(const d of rows){
+          const key = orderMatchEnabled
+            ? [d.order, d.model, d.color, d.spec].join("||")
+            : [d.model, d.color, d.spec].join("||");
+          if(!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(d);
+        }
+        return Array.from(groups.values());
+      }
+
+      function allocSmallPhase(smallSorted){
+        for(const d of smallSorted){ allocRegularDemand(d); }
+      }
+
+      function allocAmazonPhase(amazonSorted){
+        const groups = groupAmazonBySpec(amazonSorted);
+
+        if(amazonMode === "100"){
+          for(const g of groups){
+            for(const d of g){ allocAmazonStrictStep(d, d.demandQty, "amazon100"); }
+          }
+        }else{
+          for(const g of groups){
+            for(const d of g){ allocAmazonStrictStep(d, calcAmazon60Target(d), "amazon60"); }
+          }
+          for(const g of groups){
+            for(const d of g){ allocAmazonStrictStep(d, calcAmazon40Target(d), "amazon40"); }
+          }
+        }
+
+        // 同规格(60%+40%或100%)跑完后，才允许跨规格互补
+        if(!specStrict){
+          for(const g of groups){
+            for(const d of g){ allocAmazonCrossAfterStrict(d); }
+          }
+        }
+      }
+
+      function allocOtherPhase(otherSorted){
+        for(const d of otherSorted){ allocRegularDemand(d); }
+      }
+
+      const small  = demand.filter(d => d.platform === "小平台");
+      const amazon = demand.filter(d => d.platform === "亚马逊");
+      const other  = demand.filter(d => d.platform !== "小平台" && d.platform !== "亚马逊");
+
+      const smallSorted  = sortByPriority(small, priorityDir);
+      const amazonSorted = sortByPriority(amazon, priorityDir);
+      const otherSorted  = sortByPriority(other, priorityDir);
+
+      function runDemandCycle(){
+        if(smallFirst){
+          allocSmallPhase(smallSorted);
+          allocAmazonPhase(amazonSorted);
+          allocOtherPhase(otherSorted);
+          return;
+        }
+
+        const globalSorted = sortByPriority(demand, priorityDir);
+        if(amazonMode === "100"){
+          for(const d of globalSorted){
+            if(d.platform === "亚马逊") allocAmazonStrictStep(d, d.demandQty, "amazon100");
+            else allocRegularDemand(d);
+          }
+          if(!specStrict){
+            const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
+            const groups = groupAmazonBySpec(globalAmazon);
+            for(const g of groups){
+              for(const d of g){ allocAmazonCrossAfterStrict(d); }
+            }
+          }
+        }else{
+          for(const d of globalSorted){
+            if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon60Target(d), "amazon60");
+            else allocRegularDemand(d);
+          }
+          for(const d of globalSorted){
+            if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon40Target(d), "amazon40");
+          }
+          if(!specStrict){
+            const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
+            const groups = groupAmazonBySpec(globalAmazon);
+            for(const g of groups){
+              for(const d of g){ allocAmazonCrossAfterStrict(d); }
+            }
+          }
+        }
+      }
+
+      runDemandCycle();
+
+      const unmetFinal = [];
+      for(const d of demand){
+        const m = miss(d);
+        if(m > 0){
+          unmetFinal.push({
+            "销售采购订单号": d.order,
+            "型号": d.model, "颜色": d.color, "站点": d.site, "规格": d.spec, "平台": d.platform,
+            "原需求": d.demandQty, "已分配": got(d), "仍缺口": m, "优先级": d.__prio, "箱规": d.box
+          });
+        }
+      }
+
+      const left = supplyPool.filter(s => s.qtyLeft > 0).map(s => ({
+        "库存状态": s.status,
+        "销售采购订单号": s.order,
+        "物料编码": s.mat,
+        "销售型号": s.model,
+        "颜色": s.color,
+        "规格": s.spec,
+        "剩余数量": s.qtyLeft
+      }));
+
+      // 剩余追加进裂变输出（对账：总量不丢）
+      for(const s of supplyPool){
+        if(s.qtyLeft > 0){
+          out.push({
+            "库存状态": s.status,
+            "销售采购订单号": s.order,
+            "物料编码": s.mat,
+            "销售型号": s.model,
+            "颜色": s.color,
+            "站点": siteName,
+            "规格": s.spec,
+            "需求数量": s.qtyLeft
+          });
+        }
+      }
+
+      if(mergeOut){
+        out = consolidateOut(out);
+      }
+
+      return { out, unmet: unmetFinal, left, quality };
+    }
+
+    document.querySelectorAll(".tab").forEach(t=>{
+      t.addEventListener("click", ()=>{
+        document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+        t.classList.add("active");
+        const tab = t.dataset.tab;
+        $("panelGrid").classList.toggle("hidden", tab!=="grid");
+        $("panelExcel").classList.toggle("hidden", tab!=="excel");
+        setStatus("切换模式完成。", true);
       });
+    });
 
-      state.outRows = out;
-      state.unmetRows = unmet;
-      state.leftRows = left;
-      state.qualityRows = quality;
+    buildGrid("gridDemand", DEMAND_COLS, 50);
+    buildGrid("gridSupply", SUPPLY_COLS, 50);
 
-      renderTable("outWrap", out.length? out : [{"提示":"没有产生任何分配（请检查：型号/颜色/规格是否能匹配到供给；若开启订单号匹配，需求侧与供给侧订单号需一致）。"}]);
-      renderTable("unmetWrap", unmet.length? unmet : [{"提示":"没有未满足需求"}]);
-      renderTable("leftWrap", left.length? left : [{"提示":"没有剩余"}]);
-      renderTable("qualityWrap", quality.length ? quality : [{"提示":"无质量告警"}]);
+    $("btnAddDemandRows").addEventListener("click", ()=>addRows("gridDemand", DEMAND_COLS, 50));
+    $("btnAddSupplyRows").addEventListener("click", ()=>addRows("gridSupply", SUPPLY_COLS, 50));
+    $("btnClearDemand").addEventListener("click", ()=>clearGrid("gridDemand"));
+    $("btnClearSupply").addEventListener("click", ()=>clearGrid("gridSupply"));
 
-      enableDownloads(true);
-
-      const outSum = out.reduce((a,r)=>a + toInt(r["需求数量"]), 0);
-      const leftSum = left.reduce((a,r)=>a + toInt(r["剩余数量"]), 0);
-      setStatus(`完成：裂变输出${out.length}行(合计${outSum})；未满足${unmet.length}行；剩余${left.length}行(合计${leftSum})；质量提示${quality.length}条。`, true);
-
-    }catch(e){
-      console.error(e);
-      setStatus("失败：" + (e?.message || String(e)), false);
-      $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态支持任意文本（整列留空会忽略该列，部分留空会跳过空值行）；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
-      $("unmetWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
-      $("leftWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
-      $("qualityWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
+    $("btnClearAll").addEventListener("click", ()=>{
+      clearGrid("gridDemand"); clearGrid("gridSupply");
+      $("fileDemand").value=""; $("fileSupply").value="";
+      $("outWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
+      $("unmetWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
+      $("leftWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
+      $("qualityWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
+      state.outRows = [];
+      state.unmetRows = [];
+      state.leftRows = [];
+      state.qualityRows = [];
       enableDownloads(false);
+      setStatus("已清空。", true);
+    });
+
+    $("btnLoadSample").addEventListener("click", ()=>{
+      fillGridFromObjects("gridDemand", DEMAND_COLS, [
+        {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
+        {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
+        {"销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
+        {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
+      ]);
+      fillGridFromObjects("gridSupply", SUPPLY_COLS, [
+        {"销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
+        {"销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
+        {"销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
+      ]);
+      setStatus("已载入示例：同匹配条件先分在库再分在途；订单号匹配开关可控。", true);
+    });
+
+    async function loadExcelToGrid(){
+      const fD = $("fileDemand").files[0];
+      const fS = $("fileSupply").files[0];
+      if(!fD || !fS) throw new Error("请同时上传需求Excel和在途/库存Excel。");
+
+      const demJson = await readExcelFile(fD);
+      const supJson = await readExcelFile(fS);
+
+      const dem = demJson.map(r=>{ const o={}; DEMAND_COLS.forEach(c=>o[c]=r[c]??""); return o; })
+                        .filter(r=>DEMAND_COLS.some(c=>String(r[c]??"").trim()!==""));
+
+      const sup = supJson.map(r=>{
+        const o = {};
+        SUPPLY_COLS.forEach(c=>o[c]=r[c]??"");
+        o["仓库名称"] = r["仓库名称"] ?? "";
+        o["自营销售型号"] = r["自营销售型号"] ?? "";
+        o["颜色简易版"] = r["颜色简易版"] ?? "";
+        o["充电器版本"] = r["充电器版本"] ?? "";
+        o["求和项:可用量(主单位)"] = r["求和项:可用量(主单位)"] ?? "";
+        o["规格"] = r["规格"] ?? o["规格"] ?? "";
+        o["求和项:需求数量"] = r["求和项:需求数量"] ?? o["求和项:需求数量"] ?? "";
+        o["销售型号"] = r["销售型号"] ?? o["销售型号"] ?? "";
+        o["颜色"] = r["颜色"] ?? o["颜色"] ?? "";
+        o["销售采购订单号"] = r["销售采购订单号"] ?? o["销售采购订单号"] ?? "";
+        o["物料编码"] = r["物料编码"] ?? o["物料编码"] ?? "";
+        o["库存状态"] = r["库存状态"] ?? o["库存状态"] ?? "";
+        return o;
+      }).filter(r=>Object.keys(r).some(k=>String(r[k]??"").trim()!==""));
+
+      fillGridFromObjects("gridDemand", DEMAND_COLS, dem);
+      fillGridFromObjects("gridSupply", SUPPLY_COLS, sup.map(r=>{ const o={}; SUPPLY_COLS.forEach(c=>o[c]=r[c]??""); return o; }));
+      return {dem, sup};
     }
-  });
 
-  $("btnDownloadTSV").addEventListener("click", ()=>{
-    if(!state.outRows.length) return;
-    const tsv = rowsToTSV(state.outRows, OUT_COLS);
-    downloadText(`在途分货裂变_v${APP_VERSION}_裂变输出.tsv`, tsv, "text/tab-separated-values;charset=utf-8");
-  });
+    $("btnRun").addEventListener("click", async ()=>{
+      try{
+        enableDownloads(false);
 
-  $("btnDownloadXLSX").addEventListener("click", ()=>{
-    if(!state.outRows.length) return;
-    if(!window.XLSX){
-      setStatus("XLSX库未加载：无法导出XLSX（可用TSV下载）。", false);
-      return;
-    }
-    const outRowsForXlsx = state.outRows.map(r => ({ ...r, "映射": mapSiteForExport(r["站点"]) }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outRowsForXlsx), "裂变输出");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.unmetRows), "未满足需求");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.leftRows), "在途库存剩余");
-    XLSX.utils.book_append_sheet(
-      wb,
-      XLSX.utils.json_to_sheet(state.qualityRows.length ? state.qualityRows : [{"提示":"无质量告警"}]),
-      "数据质量报告"
-    );
-    applyWorkbookFont(wb, "微软雅黑", 10);
+        const priorityDir = $("priorityDir").value;
+        const amazonMode = $("amazonMode").value;
+        const smallFirst = $("smallFirst").value === "1";
+        let specStrict = $("specStrict").value === "1";
+        const boxEnabled = $("boxEnabled").value === "1";
+        let orderMatchEnabled = $("orderMatchEnabled").value === "1";
+        const unassignedSite = ($("unassignedSite").value || "未分配/留库存").trim();
+        const mergeOut = $("mergeOut").value === "1";
 
-    const buf = XLSX.write(wb, { bookType:"xlsx", type:"array", cellStyles:true });
-    const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `在途分货裂变_v${APP_VERSION}_结果.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
-</script>
-</body>
-</html>
+        const activeTab = document.querySelector(".tab.active").dataset.tab;
+
+        let demRows = [];
+        let supRows = [];
+
+        if(activeTab === "excel"){
+          const res = await loadExcelToGrid();
+          demRows = res.dem; supRows = res.sup;
+        }else{
+          demRows = readGridData("gridDemand", DEMAND_COLS);
+          supRows = readGridData("gridSupply", SUPPLY_COLS);
+        }
+
+        if(demRows.length===0) throw new Error("需求明细为空。");
+        if(supRows.length===0) throw new Error("在途/库存明细为空。");
+
+        orderMatchEnabled = await reviewOrderMatchSwitch(demRows, supRows, orderMatchEnabled);
+        $("orderMatchEnabled").value = orderMatchEnabled ? "1" : "0";
+
+        specStrict = await reviewSpecStrictSwitch(specStrict);
+        $("specStrict").value = specStrict ? "1" : "0";
+
+        const {out, unmet, left, quality} = runAllocation(demRows, supRows, {
+          priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled
+        });
+
+        state.outRows = out;
+        state.unmetRows = unmet;
+        state.leftRows = left;
+        state.qualityRows = quality;
+
+        renderTable("outWrap", out.length? out : [{"提示":"没有产生任何分配（请检查：型号/颜色/规格是否能匹配到供给；若开启订单号匹配，需求侧与供给侧订单号需一致）。"}]);
+        renderTable("unmetWrap", unmet.length? unmet : [{"提示":"没有未满足需求"}]);
+        renderTable("leftWrap", left.length? left : [{"提示":"没有剩余"}]);
+        renderTable("qualityWrap", quality.length ? quality : [{"提示":"无质量告警"}]);
+
+        enableDownloads(true);
+
+        const outSum = out.reduce((a,r)=>a + toInt(r["需求数量"]), 0);
+        const leftSum = left.reduce((a,r)=>a + toInt(r["剩余数量"]), 0);
+        setStatus(`完成：裂变输出${out.length}行(合计${outSum})；未满足${unmet.length}行；剩余${left.length}行(合计${leftSum})；质量提示${quality.length}条。`, true);
+
+      }catch(e){
+        console.error(e);
+        setStatus("失败：" + (e?.message || String(e)), false);
+        $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态支持任意文本（整列留空会忽略该列，部分留空会跳过空值行）；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
+        $("unmetWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
+        $("leftWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
+        $("qualityWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
+        enableDownloads(false);
+      }
+    });
+
+    $("btnDownloadTSV").addEventListener("click", ()=>{
+      if(!state.outRows.length) return;
+      const tsv = rowsToTSV(state.outRows, OUT_COLS);
+      downloadText(`在途分货裂变_v${APP_VERSION}_裂变输出.tsv`, tsv, "text/tab-separated-values;charset=utf-8");
+    });
+
+    $("btnDownloadXLSX").addEventListener("click", ()=>{
+      if(!state.outRows.length) return;
+      if(!window.XLSX){
+        setStatus("XLSX库未加载：无法导出XLSX（可用TSV下载）。", false);
+        return;
+      }
+      const outRowsForXlsx = state.outRows.map(r => ({ ...r, "映射": mapSiteForExport(r["站点"]) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outRowsForXlsx), "裂变输出");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.unmetRows), "未满足需求");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.leftRows), "在途库存剩余");
+      XLSX.utils.book_append_sheet(
+        wb,
+        XLSX.utils.json_to_sheet(state.qualityRows.length ? state.qualityRows : [{"提示":"无质量告警"}]),
+        "数据质量报告"
+      );
+      applyWorkbookFont(wb, "微软雅黑", 10);
+
+      const buf = XLSX.write(wb, { bookType:"xlsx", type:"array", cellStyles:true });
+      const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `在途分货裂变_v${APP_VERSION}_结果.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+  </body>
+  </html>
