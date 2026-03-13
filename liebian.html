@@ -1,1404 +1,1407 @@
-  <!doctype html>
-  <html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>在途分货裂变 5.1</title>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MSKU 清洗与SKU回填（飞书风 · 小白版 · 规格按国家）</title>
 
-    <style>
-      :root{
-        --bg:#F5F6F7; --card:#FFFFFF; --text:#1F2329; --muted:#646A73; --line:#E5E6EB;
-        --blue:#3370FF; --blue2:#2B5CFF; --shadow:0 8px 24px rgba(31,35,41,.06);
-        --radius:12px; --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI","PingFang SC","Microsoft YaHei", Arial;
-      }
-      *{box-sizing:border-box}
-      body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font)}
-      .topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-      .brand{display:flex;gap:10px;align-items:center;font-weight:700}
-      .dot{width:10px;height:10px;border-radius:50%;background:var(--blue)}
-      .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#f0f4ff;color:var(--blue);border:1px solid rgba(51,112,255,.2);font-size:12px}
-      .actions{display:flex;gap:10px;align-items:center}
-      .container{max-width:1280px;margin:18px auto;padding:0 18px}
-      .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-      .grid > *{min-width:0}
-      .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;min-width:0}
-      .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-      .field{display:flex;gap:8px;align-items:center}
-      label{font-size:12px;color:var(--muted)}
-      input[type="text"], select{border:1px solid var(--line);border-radius:10px;padding:10px 10px;font-size:13px;outline:none;background:#fff;transition:.15s}
-      input[type="text"]:focus, select:focus{border-color:rgba(51,112,255,.55);box-shadow:0 0 0 3px rgba(51,112,255,.12)}
-      .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer;transition:.15s;display:inline-flex;gap:8px;align-items:center}
-      .btn:hover{border-color:#d0d3da;background:#fafafa}
-      .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
-      .btn.primary:hover{background:var(--blue2);border-color:var(--blue2)}
-      .btn.danger{border-color:#ffd1d1;background:#fff5f5}
-      .sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
-      .ok{color:#067647} .warn{color:#B42318}
-      .hr{height:1px;background:var(--line);margin:12px 0}
-      .tabs{display:flex;gap:8px;margin-bottom:10px}
-      .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer}
-      .tab.active{border-color:rgba(51,112,255,.5);box-shadow:0 0 0 3px rgba(51,112,255,.10)}
-      .hidden{display:none !important}
-      .sheet-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
-      .sheet-meta{display:flex;gap:8px;flex-wrap:wrap}
-      .meta-pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#f7f8fb;border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap}
-      .sheet-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;min-width:0}
-      .sheet-scroll{max-height:340px;overflow:auto;width:100%}
-      table.sheet{width:100%;border-collapse:separate;border-spacing:0}
-      table.sheet thead th{position:sticky;top:0;z-index:2;background:#FAFAFA;color:var(--muted);font-weight:600;font-size:12px;border-bottom:1px solid var(--line);padding:10px 10px;text-align:left;white-space:nowrap}
-      table.sheet td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;vertical-align:top;background:#fff}
-      table.sheet tr td:last-child{border-right:none}
-      table.sheet tbody tr:last-child td{border-bottom:none}
-      .cell{padding:9px 10px;min-height:18px;font-size:13px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .cell:focus{box-shadow: inset 0 0 0 2px rgba(51,112,255,.55);background:#F7F9FF;overflow:auto;text-overflow:clip}
-      .log-card{position:relative;overflow:visible}
-      .log-preview{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-      .log-hint{font-size:12px;color:var(--muted);white-space:nowrap}
-      .log-details{position:absolute;left:14px;right:14px;top:calc(100% - 6px);padding:14px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:360px;overflow:auto;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s ease, transform .18s ease;z-index:20}
-      .log-card:hover .log-details,
-      .log-card:focus-within .log-details{opacity:1;transform:none;pointer-events:auto}
-      .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
-      .modal-panel{width:min(580px,100%);background:#fff;border:1px solid #e8eaf0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24);padding:16px 16px 14px}
-      .modal-kicker{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef3ff;color:#2b5cff;border:1px solid rgba(43,92,255,.2)}
-      .modal-title{margin:10px 0 6px 0;font-size:19px;line-height:1.3}
-      .modal-main{font-size:14px;line-height:1.7;color:#1f2329}
-      .modal-sub{margin-top:8px;padding:10px 12px;border-radius:10px;background:#f7f8fb;border:1px solid #eceff5;color:#495265;font-size:13px;line-height:1.6}
-      .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
-    </style>
+  <!-- SheetJS (XLSX) - CDN；离线跑就换成本地 xlsx.full.min.js -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    <!-- 可选：用于导出XLSX（未引入也能用TSV下载） -->
-    <script src="./xlsx.full.min.js"></script>
-  </head>
+  <style>
+    :root{
+      --bg:#F5F6F7;
+      --panel:#FFFFFF;
+      --text:#1F2329;
+      --muted:#646A73;
+      --line:#E5E6EB;
+      --blue:#3370FF;
+      --blue2:#2A5EE8;
+      --green:#00B96B;
+      --red:#F54A45;
+      --amber:#FFB020;
+      --shadow: 0 8px 24px rgba(31,35,41,.08);
+      --shadow2: 0 6px 16px rgba(31,35,41,.06);
+      --r12:12px;
+      --r10:10px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .app{display:flex;min-height:100vh;}
+    .sidebar{
+      width: 352px;
+      background:var(--panel);
+      border-right:1px solid var(--line);
+      padding:16px 14px;
+      position:sticky; top:0; height:100vh; overflow:auto;
+    }
+    .brand{display:flex;align-items:center;gap:10px;padding:10px 10px 14px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+    .logo{width:34px;height:34px;border-radius:10px;background:radial-gradient(120% 120% at 20% 20%, #76A7FF 0%, var(--blue) 55%, #1D4ED8 100%);box-shadow:0 6px 16px rgba(51,112,255,.25);}
+    .brand h1{font-size:14px;margin:0;line-height:1.2;}
+    .brand p{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.35;}
+    .card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--r12);
+      box-shadow:var(--shadow2);
+      overflow:hidden;
+    }
+    .card .hd{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;flex-wrap:wrap;}
+    .card .hd b{font-size:13px;}
+    .card .bd{padding:12px 14px;}
+    .muted{color:var(--muted);}
+    .small{font-size:12px;}
+    .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn{
+      border:0;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;
+      transition: transform .06s ease, background .12s ease, opacity .12s ease;
+      line-height: 1; white-space: nowrap;
+    }
+    .btn:active{transform: translateY(1px);}
+    .btn.primary{background:var(--blue);color:#fff;}
+    .btn.primary:hover{background:var(--blue2);}
+    .btn.secondary{background:#F2F3F5;color:var(--text);border:1px solid var(--line);}
+    .btn.secondary:hover{background:#ECEEF2;}
+    .btn.danger{background:#FFECEB;color:var(--red);border:1px solid #FFD1CF;}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+    .file{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px; border-radius:10px;
+      background:#F7F8FA; border:1px dashed #D0D3D9;
+    }
+    .file .meta{min-width:0;}
+    .file .meta .name{font-size:13px;font-weight:800;margin:0;line-height:1.2;}
+    .file .meta .desc{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.45;}
+    .file label{cursor:pointer;}
+    .file input{display:none;}
 
-  <body>
-    <div class="topbar">
-      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v5.5</span></div>
-      <div class="actions">
-        <button class="btn" id="btnLoadSample">载入示例</button>
-        <button class="btn danger" id="btnClearAll">清空全部</button>
-        <button class="btn primary" id="btnRun">生成裂变结果</button>
+    .pill{
+      font-size:12px;color:var(--muted);
+      padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;
+      max-width: 220px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tag{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px;border-radius:999px;border:1px solid var(--line);
+      background:#fff;color:var(--muted);font-size:12px;
+    }
+    .lamp{width:8px;height:8px;border-radius:50%;}
+    .lamp.ok{background:var(--green);box-shadow:0 0 0 5px rgba(0,185,107,.12);}
+    .lamp.bad{background:var(--red);box-shadow:0 0 0 5px rgba(245,74,69,.12);}
+    .lamp.wait{background:var(--amber);box-shadow:0 0 0 5px rgba(255,176,32,.14);}
+
+    .main{flex:1;display:flex;flex-direction:column;min-width:0;}
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      background: rgba(245,246,247,.88);
+      backdrop-filter: blur(12px);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar-inner{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+    .titlewrap h2{margin:0;font-size:16px;letter-spacing:.2px;line-height:1.2;}
+    .titlewrap p{margin:6px 0 0;color:var(--muted);font-size:12px;line-height:1.4;}
+    .tags{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;}
+
+    .content{
+      padding:18px;
+      display:grid;
+      grid-template-columns: 1.06fr .94fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 1100px){
+      .sidebar{position:relative;height:auto;width:100%;}
+      .app{flex-direction:column;}
+      .content{grid-template-columns:1fr;}
+    }
+
+    .kpis{display:flex;flex-wrap:wrap;gap:10px;}
+    .kpi{background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:140px;}
+    .kpi b{display:block;font-size:14px;line-height:1.15;}
+    .kpi span{display:block;font-size:12px;color:var(--muted);margin-top:6px;line-height:1.2;}
+
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:12px;}
+    .search{flex:1;display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;min-width:240px;}
+    .search input{border:0;outline:none;background:transparent;width:100%;font-size:13px;line-height:1.2;}
+    .sel{border:1px solid var(--line);border-radius:10px;padding:10px 10px;font-size:13px;outline:none;background:#fff;min-width:220px;}
+
+    .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff;max-height:600px;}
+    table{width:100%;border-collapse:collapse;font-size:12.5px;}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45;}
+    th{position:sticky;top:0;background:#fff;z-index:2;text-align:left;color:var(--muted);font-weight:800;font-size:12px;}
+    tr:hover td{background:#F7F8FA;}
+    .mono{font-family:var(--mono);}
+    .ok{color:var(--green);font-weight:900;}
+    .bad{color:var(--red);font-weight:900;}
+
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;}
+    .tabbtn{
+      padding:8px 10px;border-radius:999px;border:1px solid var(--line);
+      background:#fff; color:var(--muted); font-size:12px; cursor:pointer;
+    }
+    .tabbtn.active{background:#E8F0FF;border-color:#C7D7FF;color:#102A75;font-weight:900;}
+
+    .hint{
+      padding:10px 12px;border-radius:10px;border:1px solid #D6E4FF;background:#F2F7FF;color:#102A75;
+      font-size:12.5px;line-height:1.55;
+    }
+    .warn{
+      padding:10px 12px;border-radius:10px;border:1px solid #FFE0CC;background:#FFF7F0;color:#7A2E0E;
+      font-size:12.5px;line-height:1.55;
+    }
+    .hr{height:1px;background:var(--line);margin:12px 0;}
+
+    .formgrid{display:grid;grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 1100px){ .formgrid{grid-template-columns:1fr;} }
+    .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:800;}
+    .inp{
+      width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 10px;font-size:13px;outline:none;background:#fff;
+      font-family: var(--mono);
+    }
+    .minihelp{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4;}
+    .gridtable{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .gridtable table{font-size:12.5px;}
+    .gridtable th, .gridtable td{padding:9px 10px;}
+    .rowbtn{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:10px;
+      padding:8px 10px;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+      white-space: nowrap;
+    }
+    .rowbtn:hover{background:#F7F8FA;}
+    .rowbtn.danger{border-color:#FFD1CF;color:var(--red);background:#FFF3F2;}
+    textarea.json{
+      width:100%;
+      min-height: 380px;
+      resize: vertical;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      padding: 10px 10px;
+      font-size: 12px;
+      line-height: 1.55;
+      outline:none;
+      background: #fff;
+      font-family: var(--mono);
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>MSKU 清洗与SKU回填</h1>
+        <p>小白版 · 规格只按国家(C列)</p>
       </div>
     </div>
 
-    <div class="container">
-      <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <div class="row">
-            <div class="field">
-              <label>优先级方向</label>
-              <select id="priorityDir">
-                <option value="asc" selected>数字越小越优先</option>
-                <option value="desc">数字越大越优先</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>亚马逊批次</label>
-              <select id="amazonMode">
-                <option value="60_40" selected>先60%滚一遍，再40%滚一遍</option>
-                <option value="100">不分批（一次性全量）</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>小平台优先</label>
-              <select id="smallFirst">
-                <option value="1" selected>是（先小平台）</option>
-                <option value="0">否（按全局优先级混排）</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>只允许同规格裂变</label>
-              <select id="specStrict">
-                <option value="1" selected>开（禁止跨规格补缺）</option>
-                <option value="0">关（同规格先跑完后再跨规格补缺：日缺口优先吃美结余）</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>箱规取整（亚马逊60%阶段）</label>
-              <select id="boxEnabled">
-                <option value="1">开（按箱规倍数向上取整）</option>
-                <option value="0" selected>关（不按箱规；仍保证整数）</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>按销售采购订单号匹配</label>
-              <select id="orderMatchEnabled">
-                <option value="0">关（忽略需求侧订单号）</option>
-                <option value="1" selected>开（严格同订单号扣减）</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label>未分配站点名</label>
-              <input id="unassignedSite" type="text" value="未分配/留库存" />
-            </div>
-
-            <div class="field">
-              <label>合并同站点行</label>
-              <select id="mergeOut">
-                <option value="1" selected>是（推荐）</option>
-                <option value="0">否</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row">
-            <span id="status" class="sub">就绪：左边粘贴“需求明细”，右边粘贴“在途/库存明细”，然后点“生成裂变结果”。</span>
-          </div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="tabs">
-          <div class="tab active" data-tab="grid">表格粘贴（推荐）</div>
-          <div class="tab" data-tab="excel">上传Excel</div>
-        </div>
-
-        <div id="panelGrid">
-          <div class="grid">
-          <div class="card">
-            <div class="sheet-toolbar">
-              <div class="row">
-                <h3 style="margin:0">需求明细</h3>
-                <div class="sheet-meta">
-                  <span class="meta-pill" id="metaDemandUsed">已用 0 行</span>
-                  <span class="meta-pill" id="metaDemandPaste">最近未粘贴</span>
-                </div>
-              </div>
-              <div class="row">
-                <button class="btn" id="btnAddDemandRows">追加50行</button>
-                <button class="btn danger" id="btnClearDemand">清空需求</button>
-              </div>
-            </div>
-              <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridDemand"></table></div></div>
-              <div class="sub">列固定：销售采购订单号 / 型号 / 颜色 / 站点（平台） / SI数量 / 品线 / 需求规格 / 平台 / 箱规信息 / 优先级</div>
-            </div>
-
-          <div class="card">
-            <div class="sheet-toolbar">
-              <div class="row">
-                <h3 style="margin:0">在途 / 库存明细</h3>
-                <div class="sheet-meta">
-                  <span class="meta-pill" id="metaSupplyUsed">已用 0 行</span>
-                  <span class="meta-pill" id="metaSupplyPaste">最近未粘贴</span>
-                </div>
-              </div>
-              <div class="row">
-                <button class="btn" id="btnAddSupplyRows">追加50行</button>
-                <button class="btn danger" id="btnClearSupply">清空在途</button>
-              </div>
-            </div>
-            <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridSupply"></table></div></div>
-            <div class="sub">列固定：库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
-            </div>
-          </div>
-        </div>
-
-        <div id="panelExcel" class="hidden">
-          <div class="grid">
-            <div class="card">
-              <h3 style="margin:0 0 10px 0">上传需求Excel</h3>
-              <input id="fileDemand" type="file" accept=".xlsx,.xls" />
-              <div class="sub">默认读取第一个sheet；当“按销售采购订单号匹配=开”时，需求侧销售采购订单号不能为空。</div>
-            </div>
-            <div class="card">
-              <h3 style="margin:0 0 10px 0">上传在途/库存Excel</h3>
-              <input id="fileSupply" type="file" accept=".xlsx,.xls" />
-            <div class="sub">默认读取第一个sheet；库存状态支持任意文本。若整列留空则忽略该列；若仅部分留空则自动跳过空值行。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
-            </div>
-          </div>
-        </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="hd">
+        <b>导入</b>
+        <span class="pill" id="verPill">v1</span>
       </div>
-
-      <div class="card" style="margin-top:14px">
-        <div class="row" style="justify-content:space-between">
-          <h3 style="margin:0">裂变输出（导入用）</h3>
-          <div class="row">
-            <button class="btn" id="btnDownloadTSV" disabled>下载TSV</button>
-            <button class="btn primary" id="btnDownloadXLSX" disabled>下载XLSX</button>
+      <div class="bd">
+        <div class="file">
+          <div class="meta">
+            <p class="name">标准SKU库</p>
+            <p class="desc">建议列名为 <span class="mono">SKU</span><br/>没有就默认第一列</p>
           </div>
-        </div>
-        <div class="sub">输出列：库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
-        <div class="hr"></div>
-        <div id="outWrap" class="sub">还没有生成结果。</div>
-      </div>
-
-      <div class="card" style="margin-top:14px">
-        <h3 style="margin:0">未满足需求（对账用）</h3>
-        <div class="sub">这里展示“按规则分配后仍缺口”的行。</div>
-        <div class="hr"></div>
-        <div id="unmetWrap" class="sub">还没有生成结果。</div>
-      </div>
-
-      <div class="card" style="margin-top:14px">
-        <h3 style="margin:0">在途/库存剩余（对账用）</h3>
-        <div class="sub">这张表会和“裂变输出”里【站点=未分配站点名】的数量一致（对账用）。</div>
-        <div class="hr"></div>
-        <div id="leftWrap" class="sub">还没有生成结果。</div>
-      </div>
-
-      <div class="card" style="margin-top:14px">
-        <h3 style="margin:0">数据质量报告</h3>
-        <div class="sub">展示被跳过/被忽略的数据行，便于回溯。</div>
-        <div class="hr"></div>
-        <div id="qualityWrap" class="sub">还没有生成结果。</div>
-      </div>
-
-      <div class="card log-card" style="margin-top:14px" tabindex="0">
-        <div class="log-preview">
           <div>
-            <h3 style="margin:0">更新日志</h3>
-            <div class="sub"><strong>v5.5（2026-03-04）</strong>：修正订单号匹配口径：开启后在库/在途/其他状态统一按订单号匹配，不再允许在库跨订单分配。</div>
+            <label class="btn secondary" for="stdFile">选择文件</label>
+            <input id="stdFile" type="file" accept=".xlsx,.xls" />
           </div>
-          <div class="log-hint">悬浮展开</div>
         </div>
-        <div class="log-details">
-          <div class="sub">
-            <div><strong>v5.5（2026-03-04）</strong>：修正订单号匹配口径：开启后在库/在途/其他状态统一按订单号匹配，不再允许在库跨订单分配。</div>
-            <div><strong>v5.4（2026-03-04）</strong>：调整库存状态规则：仅当库存状态列同时存在“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”补缺；来源规格自身仍有缺口时不得外借，并保留“美规优先补日规”。</div>
-            <div><strong>v5.3（2026-03-04）</strong>：重做库存状态规则：仅当库存状态列同时存在“在库/在途”时才区分状态；同规格原始存在在途时禁止异规格改制，且来源规格自身仍有缺口时不得外借。</div>
-            <div><strong>v5.2（2026-03-04）</strong>：库存状态提升为最外层分配阶段，按“在库→在途→其他状态”依次完整执行；库存状态整列留空时回退原规则。</div>
-            <div><strong>v5.1（2026-02-17）</strong>：在库可跨订单优先分配；修正表格溢出；更新日志改为悬浮展开且页面不跳动。</div>
-            <div><strong>v5.0（2026-02-17）</strong>：优化粘贴体验、折叠更新日志，明确“在库优先”，并精简生成前审核弹窗文案。</div>
-            <div><strong>v4.9（2026-02-17）</strong>：放开库存状态限制，不再限定“在库/在途”；支持任意库存状态文本参与分配，并保留“在库→在途→其他状态”的消耗顺序。</div>
-            <div><strong>v4.8（2026-02-17）</strong>：按业务口径微调跨规格规则：仅保留“美规结余优先给日规缺口”，不再额外保护日规库存（美规无结余时按正常优先级分配）。</div>
-            <div><strong>v4.7（2026-02-17）</strong>：跨规格互补新增全局保护：同型号同颜色（及同订单号）下，只要仍有日规缺口，非日规不会先占用美规结余，优先留给日规补缺。</div>
-            <div><strong>v4.6（2026-02-17）</strong>：修正亚马逊6/4分配逻辑：同型号+颜色+规格先跑完同规格（60%后40%）再跨规格互补；60%按箱规规则处理、40%不按箱规；小平台不再做箱规补齐。</div>
-            <div><strong>v4.5（2026-02-06）</strong>：重做生成前防呆弹窗样式与文案，替换原生alert/confirm为统一审核弹窗。</div>
-            <div><strong>v4.4（2026-02-06）</strong>：修复跨规格互补时日规优先级问题，先保障同型号同颜色（日规）缺口，再允许其他规格占用日规库存。</div>
-            <div><strong>v4.3（2026-02-06）</strong>：清理更新日志，移除字体需求相关记录。</div>
-            <div><strong>v4.2（2026-02-06）</strong>：优化导出参数兼容性。</div>
-            <div><strong>v4.1（2026-02-06）</strong>：新增生成前二次审核（订单号匹配、同规格裂变），并完善自动开关提醒逻辑。</div>
-            <div><strong>v4.0（2026-02-06）</strong>：库存状态移至最左列；库存状态整列留空可忽略、部分留空自动跳过；新增数据质量报告；裂变输出导出新增“映射”列。</div>
-            <div><strong>v3.0</strong>：基础分货裂变流程与导入导出能力。</div>
+
+        <div style="height:10px;"></div>
+
+        <div class="file">
+          <div class="meta">
+            <p class="name">Listing</p>
+            <p class="desc">默认 A=MSKU<br/>B=标题<br/>C=国家</p>
           </div>
+          <div>
+            <label class="btn secondary" for="listFile">选择文件</label>
+            <input id="listFile" type="file" accept=".xlsx,.xls" />
+          </div>
+        </div>
+
+        <div style="height:12px;"></div>
+        <div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;">
+          <div class="pill" id="stdPill">标准库：未导入</div>
+          <div class="pill" id="listPill">Listing：未导入</div>
         </div>
       </div>
     </div>
 
-    <div id="reviewModalMask" class="modal-mask hidden" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
-      <div class="modal-panel">
-        <span class="modal-kicker" id="reviewModalKicker">生成前审核</span>
-        <h3 id="reviewModalTitle" class="modal-title"></h3>
-        <div id="reviewModalMain" class="modal-main"></div>
-        <div id="reviewModalSub" class="modal-sub hidden"></div>
-        <div class="modal-actions">
-          <button id="reviewModalCancel" class="btn">取消</button>
-          <button id="reviewModalConfirm" class="btn primary">确认</button>
+    <div class="card" style="margin-bottom:12px;">
+      <div class="hd">
+        <b>运行</b>
+        <span class="small muted">一键跑完</span>
+      </div>
+      <div class="bd">
+        <div class="btnrow" style="margin-bottom:10px;">
+          <button class="btn primary" id="btnRun" disabled>开始运行</button>
+          <button class="btn secondary" id="btnExportXlsx" disabled>导出xlsx</button>
+          <button class="btn secondary" id="btnExportTsv" disabled>导出TSV</button>
+          <button class="btn danger" id="btnReset">清空</button>
+        </div>
+        <div class="warn">
+          规格不再解析 MSKU/标题。<br/>
+          只看 <b>C列国家</b> → 先用你手工配置 → 再用系统默认（IT/DE/FR/ES…=EU）。<br/>
+          国家缺失/识别不到 → 规格为空 → 只可能 NO兜底或匹配不到。
         </div>
       </div>
     </div>
 
-  <script>
-    const APP_VERSION = "5.5";
-    const DEMAND_COLS = ["销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
-    const SUPPLY_COLS = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
-    const OUT_COLS    = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
+    <div class="card">
+      <div class="hd"><b>状态</b></div>
+      <div class="bd">
+        <div class="tag" style="justify-content:flex-start; width:100%; margin-bottom:8px;">
+          <span class="lamp wait" id="rulesLamp"></span><span id="rulesText">规则未校验</span>
+        </div>
+        <div class="tag" style="justify-content:flex-start; width:100%;">
+          <span class="lamp wait" id="runLamp"></span><span id="runText">未运行</span>
+        </div>
+      </div>
+    </div>
+  </aside>
 
-    const $ = (id)=>document.getElementById(id);
-    const state = { outRows: [], unmetRows: [], leftRows: [], qualityRows: [] };
-    const gridStats = {
-      gridDemand: { pastedRows: 0, pastedCols: 0 },
-      gridSupply: { pastedRows: 0, pastedCols: 0 }
-    };
-    const GRID_META = {
-      gridDemand: { usedId: "metaDemandUsed", pasteId: "metaDemandPaste", label: "需求明细" },
-      gridSupply: { usedId: "metaSupplyUsed", pasteId: "metaSupplyPaste", label: "在途/库存明细" }
-    };
-    document.title = `在途分货裂变 ${APP_VERSION}`;
-    if($("appVersion")) $("appVersion").textContent = `v${APP_VERSION}`;
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="titlewrap">
+          <h2>规则配置化映射</h2>
+          <p>内置：IT/DE/FR/ES…→EU；US→US；JP→JP；UK/GB→UK。你只管 MX/CA/BR 这种争议的。</p>
+        </div>
+        <div class="tags">
+          <span class="tag"><span class="lamp wait" id="stdLamp"></span><span id="stdText">标准库未导入</span></span>
+          <span class="tag"><span class="lamp wait" id="listLamp"></span><span id="listText">Listing未导入</span></span>
+        </div>
+      </div>
+    </div>
 
-    function setStatus(msg, ok=true){
-      const el = $("status");
-      el.textContent = msg;
-      el.className = "sub " + (ok ? "ok" : "warn");
-    }
-    function escapeHtml(s){
-      return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    }
-    function toNum(v){
-      const n = Number(String(v ?? "").replace(/,/g,"").trim());
-      return Number.isFinite(n) ? n : 0;
-    }
-    function toInt(v){
-      return Math.max(0, Math.floor(toNum(v)));
-    }
-    function roundUpBox(qty, box, enabled=true){
-      const q = Math.max(0, Math.ceil(toNum(qty)));
-      if(!enabled) return q;
-      const b = toInt(box);
-      if(b <= 0) return q;
-      return Math.ceil(q / b) * b;
-    }
-    function normSpec(x){
-      const s = String(x ?? "").trim();
-      if(!s) return "";
-      if(s.includes("日")) return "日";
-      if(s.includes("美")) return "美";
-      if(s.includes("欧")) return "欧";
-      if(s.includes("英")) return "英";
-      return s;
-    }
-    function normKey(v){
-      return String(v ?? "").trim().toUpperCase();
-    }
-    function normStockStatus(v){
-      const s = String(v ?? "").trim();
-      return s;
-    }
-    function getGridColumns(tableId){
-      if(tableId === "gridDemand") return DEMAND_COLS;
-      if(tableId === "gridSupply") return SUPPLY_COLS;
-      return [];
-    }
-    function syncCellTitle(cell){
-      cell.title = (cell.textContent ?? "").trim();
-    }
-    function setCellText(cell, value){
-      cell.textContent = String(value ?? "");
-      syncCellTitle(cell);
-    }
-    function countGridUsedRows(tableId, columns){
-      const tbody = $(tableId)?.querySelector("tbody");
-      if(!tbody) return 0;
-      let used = 0;
-      for(const tr of tbody.children){
-        const cells = tr.querySelectorAll(".cell");
-        if(columns.some((_, idx)=>String(cells[idx]?.textContent ?? "").trim() !== "")) used++;
+    <div class="content">
+      <!-- 结果区 -->
+      <section class="card">
+        <div class="hd">
+          <b>结果</b>
+          <span class="small muted">展示前2000行（导出全量）</span>
+        </div>
+        <div class="bd">
+          <div class="kpis">
+            <div class="kpi"><b id="kSkuCount">0</b><span>标准SKU数量</span></div>
+            <div class="kpi"><b id="kRowCount">0</b><span>Listing行数</span></div>
+            <div class="kpi"><b id="kMatched">0</b><span>匹配到</span></div>
+            <div class="kpi"><b id="kUnmatched">0</b><span>匹配不到</span></div>
+          </div>
+
+          <div class="toolbar">
+            <div class="search">
+              <span class="muted">🔎</span>
+              <input id="qSearch" placeholder="搜索：MSKU / 标题 / 国家 / SKU / 原因..." />
+            </div>
+            <select id="qFilter" class="sel">
+              <option value="all">全部</option>
+              <option value="matched">仅匹配到</option>
+              <option value="unmatched">仅匹配不到</option>
+              <option value="stand">仅STAND/SUPPORT直出</option>
+              <option value="no_fallback">仅NO兜底命中</option>
+              <option value="alias">仅型号修正命中</option>
+              <option value="pinyin">仅拼音颜色命中</option>
+              <option value="country_missing">仅国家缺失/未识别导致</option>
+            </select>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <div class="tablewrap">
+            <table>
+              <thead>
+              <tr>
+                <th style="min-width:70px;">行号</th>
+                <th style="min-width:270px;">MSKU</th>
+                <th style="min-width:260px;">标题</th>
+                <th style="min-width:100px;">国家(C列)</th>
+                <th style="min-width:190px;">回填SKU</th>
+                <th style="min-width:170px;">清洗键</th>
+                <th style="min-width:210px;">命中来源</th>
+                <th style="min-width:320px;">审计</th>
+              </tr>
+              </thead>
+              <tbody id="tbody">
+              <tr><td colspan="8" class="muted">还没运行。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 规则区 -->
+      <aside class="card">
+        <div class="hd">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <b>规则（基础模式）</b>
+            <span class="pill">你填表格就行</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn secondary" id="btnValidateSave">校验并保存</button>
+            <button class="btn secondary" id="btnLoadDefault">恢复默认</button>
+            <button class="btn secondary" id="btnExportRules">导出JSON</button>
+            <label class="btn secondary" for="rulesImport">导入JSON</label>
+            <input id="rulesImport" type="file" accept=".json" style="display:none" />
+          </div>
+        </div>
+
+        <div class="bd">
+          <div class="tabs" style="margin-bottom:10px;">
+            <button class="tabbtn active" id="tabBasic">基础模式（推荐）</button>
+            <button class="tabbtn" id="tabAdvanced">高级JSON（可不看）</button>
+          </div>
+
+          <!-- 基础 -->
+          <div id="panelBasic">
+            <div class="hint">
+              你只管这几类“可变规则”：<br/>
+              ① 国家→规格（MX/CA/BR…怎么归你说了算，<b>你配置覆盖默认</b>）<br/>
+              ② 关键词直出（STAND/SUPPORT→STAND）<br/>
+              ③ 型号修正（T36-A→T36-V，BLADE10-NFC→BLADE10）<br/>
+              ④ 型号关键词后缀（Energy→-E，VIP→-V）<br/>
+              ⑤ 颜色修正/拼音（KFL→RED，hui→GRAY，lv→GREEN…）
+            </div>
+
+            <div class="hr"></div>
+
+            <!-- 1 国家->规格 -->
+            <b style="font-size:13px;">1）国家 → 规格（只看C列国家）</b>
+            <div class="small muted" style="margin-top:6px; line-height:1.45;">
+              默认已内置常识（IT/DE/FR/ES…=EU），你只加“例外/争议”。你填的会优先覆盖默认。
+            </div>
+            <div style="height:10px;"></div>
+            <div class="formgrid">
+              <div class="field">
+                <label>国家码（例：MX / CA / BR）</label>
+                <input id="qCountry" class="inp" placeholder="输入国家码，如 MX" />
+                <div class="minihelp">自动转大写，忽略中间横杠。</div>
+              </div>
+              <div class="field">
+                <label>归并到（EU / UK / US / JP / NO）</label>
+                <select id="qSpec" class="sel">
+                  <option>EU</option><option>UK</option><option>US</option><option>JP</option><option>NO</option>
+                </select>
+                <div class="minihelp">只允许这5种规格。</div>
+              </div>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="btnrow">
+              <button class="btn primary" id="addSpecMap">添加/覆盖</button>
+              <button class="btn danger" id="delSpecMap">删除</button>
+              <button class="btn secondary" id="sortSpecMap">排序</button>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="gridtable">
+              <table>
+                <thead><tr><th style="width:45%;">国家</th><th style="width:35%;">规格</th><th>操作</th></tr></thead>
+                <tbody id="specMapBody"></tbody>
+              </table>
+            </div>
+
+            <div class="hr"></div>
+
+            <!-- 2 contains_map -->
+            <b style="font-size:13px;">2）关键词直出（MSKU包含 → 直接回填SKU）</b>
+            <div style="height:10px;"></div>
+            <div class="formgrid">
+              <div class="field">
+                <label>MSKU包含关键词</label>
+                <input id="qContains" class="inp" placeholder="如 STAND / SUPPORT" />
+              </div>
+              <div class="field">
+                <label>直接回填SKU</label>
+                <input id="qContainsSku" class="inp" placeholder="如 STAND" />
+              </div>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="btnrow">
+              <button class="btn primary" id="addContains">添加/覆盖</button>
+              <button class="btn danger" id="delContains">删除</button>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="gridtable">
+              <table>
+                <thead><tr><th style="width:45%;">关键词</th><th style="width:35%;">回填SKU</th><th>操作</th></tr></thead>
+                <tbody id="containsBody"></tbody>
+              </table>
+            </div>
+
+            <div class="hr"></div>
+
+            <!-- 3 model_alias -->
+            <b style="font-size:13px;">3）型号修正（from → to）</b>
+            <div style="height:10px;"></div>
+            <div class="formgrid">
+              <div class="field">
+                <label>原型号（from）</label>
+                <input id="qModelFrom" class="inp" placeholder="如 T36-A / BLADE10-NFC" />
+              </div>
+              <div class="field">
+                <label>修正为（to）</label>
+                <input id="qModelTo" class="inp" placeholder="如 T36-V / BLADE10" />
+              </div>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="btnrow">
+              <button class="btn primary" id="addModelAlias">添加/覆盖</button>
+              <button class="btn danger" id="delModelAlias">删除</button>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="gridtable">
+              <table>
+                <thead><tr><th style="width:45%;">from</th><th style="width:35%;">to</th><th>操作</th></tr></thead>
+                <tbody id="modelAliasBody"></tbody>
+              </table>
+            </div>
+
+            <div class="hr"></div>
+
+            <!-- 4 model_keyword_suffix -->
+            <b style="font-size:13px;">4）型号关键词后缀（包含关键字 → 加后缀）</b>
+            <div class="small muted" style="margin-top:6px;line-height:1.45;">例：Blade10Energy → Blade10-E；XXXVIP → XXX-V（只作用于型号段）。</div>
+            <div style="height:10px;"></div>
+            <div class="formgrid">
+              <div class="field">
+                <label>关键字（keyword）</label>
+                <input id="qKeyKw" class="inp" placeholder="如 ENERGY / VIP" />
+              </div>
+              <div class="field">
+                <label>后缀（suffix）</label>
+                <input id="qKeySuf" class="inp" placeholder="如 -E / -V" />
+              </div>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="btnrow">
+              <button class="btn primary" id="addKeySuf">添加/覆盖</button>
+              <button class="btn danger" id="delKeySuf">删除</button>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="gridtable">
+              <table>
+                <thead><tr><th style="width:45%;">keyword</th><th style="width:35%;">suffix</th><th>操作</th></tr></thead>
+                <tbody id="keySufBody"></tbody>
+              </table>
+            </div>
+
+            <div class="hr"></div>
+
+            <!-- 5 color maps -->
+            <b style="font-size:13px;">5）颜色修正</b>
+            <div style="height:10px;"></div>
+            <div class="formgrid">
+              <div class="field">
+                <label>颜色写法（from）</label>
+                <input id="qColorFrom" class="inp" placeholder="如 KFL / GRAY" />
+              </div>
+              <div class="field">
+                <label>标准颜色（to）</label>
+                <input id="qColorTo" class="inp" placeholder="如 RED / DGERY" />
+              </div>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="formgrid">
+              <div class="field">
+                <label>可选：限定型号前缀（model_prefix）</label>
+                <input id="qColorModel" class="inp" placeholder="如 S200（留空=所有型号）" />
+              </div>
+              <div class="field">
+                <label>类型</label>
+                <select id="qColorType" class="sel">
+                  <option value="token">普通颜色映射（color_maps）</option>
+                  <option value="pinyin">拼音映射（pinyin_color_maps）</option>
+                </select>
+              </div>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="btnrow">
+              <button class="btn primary" id="addColorMap">添加/覆盖</button>
+              <button class="btn danger" id="delColorMap">删除</button>
+            </div>
+            <div style="height:10px;"></div>
+            <div class="gridtable">
+              <table>
+                <thead><tr><th style="width:40%;">from</th><th style="width:30%;">to</th><th style="width:20%;">model_prefix</th><th>操作</th></tr></thead>
+                <tbody id="colorMapBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 高级 -->
+          <div id="panelAdvanced" style="display:none;">
+            <div class="warn" style="margin-bottom:10px;">
+              你不想看JSON就别看；只有在“批量复制规则/迁移电脑”时才用。
+            </div>
+            <textarea class="json" id="rulesBox"></textarea>
+          </div>
+
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+/** ==============
+ * 默认国家分组（常识内置）
+ * 你手工 spec_map 永远优先覆盖
+ * ============== */
+const DEFAULT_COUNTRY_GROUPS = {
+  US: new Set(["US","USA","UNITEDSTATES","UNITEDSTATESOFAMERICA"]),
+  UK: new Set(["UK","GB","GREATBRITAIN","UNITEDKINGDOM"]),
+  JP: new Set(["JP","JAPAN"]),
+  NO: new Set(["NO","NORWAY"]),
+  EU: new Set([
+    "DE","GERMANY","IT","ITALY","ES","SPAIN","FR","FRANCE","PL","POLAND","NL","NETHERLANDS","BE","BELGIUM",
+    "SE","SWEDEN","FI","FINLAND","DK","DENMARK","AT","AUSTRIA","PT","PORTUGAL","IE","IRELAND","CZ","CZECH",
+    "HU","HUNGARY","RO","ROMANIA","BG","BULGARIA","GR","GREECE","SK","SLOVAKIA","SI","SLOVENIA","HR","CROATIA",
+    "EE","ESTONIA","LV","LATVIA","LT","LITHUANIA","LU","LUXEMBOURG","CY","CYPRUS","MT","MALTA"
+  ])
+};
+
+/** ==============
+ * 默认规则（按你前面要求预置）
+ * ============== */
+const DEFAULT_RULES = {
+  version: 1,
+  allowed_specs: ["US","UK","JP","EU","NO"],
+
+  // MSKU包含关键词 → 直接回填 SKU
+  contains_map: [
+    { pattern: "STAND", output_sku: "STAND" },
+    { pattern: "SUPPORT", output_sku: "STAND" }
+  ],
+
+  // 型号修正：历史遗留
+  model_alias: [
+    { from: "BLADE10-NFC", to: "BLADE10" },
+    { from: "T36-A", to: "T36-V" }
+  ],
+
+  // 型号包含关键字 → 加后缀
+  model_keyword_suffix: [
+    { keyword: "ENERGY", suffix: "-E" },
+    { keyword: "VIP", suffix: "-V" }
+  ],
+
+  // 颜色映射（可选型号前缀）
+  color_maps: [
+    { from: "KFL", to: "RED" },
+    { model_prefix: "S200", from: "GRAY", to: "DGERY" }
+  ],
+
+  // 拼音颜色映射（全局）
+  pinyin_color_maps: [
+    { from: "HUI", to: "GRAY" },
+    { from: "LV", to: "GREEN" },
+    { from: "HEI", to: "BLACK" },
+    { from: "HONG", to: "RED" },
+    { from: "LAN", to: "BLUE" },
+    { from: "BAI", to: "WHITE" },
+    { from: "YIN", to: "SILVER" },
+    { from: "JIN", to: "GOLD" }
+  ],
+
+  // 你手工国家→规格（覆盖默认国家集合）；默认留空
+  spec_map: {},
+
+  // NO兜底：同型号+颜色只有NO时强制回填NO
+  no_fallback: true,
+
+  // 标题可补：型号/颜色（规格不补）
+  title_can_fill: { model: true, color: true, spec: false }
+};
+
+/** ==============
+ * 状态
+ * ============== */
+let RULES = loadRulesFromLocal() ?? structuredClone(DEFAULT_RULES);
+let STD = null;
+let LIST = null;
+let RESULTS = [];
+
+/** ==============
+ * DOM
+ * ============== */
+const el = id => document.getElementById(id);
+function setLamp(lampEl, textEl, state, text){
+  lampEl.className = "lamp " + (state==="ok"?"ok":state==="bad"?"bad":"wait");
+  textEl.textContent = text;
+}
+function escapeHtml(str){
+  return String(str??"")
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function normalizeText(s){
+  return String(s||"")
+    .trim()
+    .replaceAll("_","-")
+    .replaceAll("—","-").replaceAll("–","-").replaceAll("－","-")
+    .replace(/\s+/g,"-")
+    .replace(/-+/g,"-")
+    .toUpperCase();
+}
+function normalizeSku(s){
+  return String(s||"").trim().replace(/\s+/g,"").toUpperCase();
+}
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+async function readWorkbook(file){
+  const buf = await file.arrayBuffer();
+  return XLSX.read(buf, {type:"array"});
+}
+
+/** ==============
+ * 规则面板：渲染
+ * ============== */
+function refreshRulesUI(){
+  el("verPill").textContent = "v" + (RULES.version || 1);
+  if(el("rulesBox")) el("rulesBox").value = JSON.stringify(RULES, null, 2);
+
+  renderSpecMapTable();
+  renderContainsTable();
+  renderModelAliasTable();
+  renderKeySufTable();
+  renderColorMapTable();
+}
+function bumpAndSave(msg){
+  RULES.version = (RULES.version||0) + 1;
+  saveRulesToLocal(RULES);
+  refreshRulesUI();
+  setLamp(el("rulesLamp"), el("rulesText"), "ok", msg || "已保存");
+}
+function renderSpecMapTable(){
+  const body = el("specMapBody");
+  body.innerHTML = "";
+  const entries = Object.entries(RULES.spec_map || {}).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(entries.length===0){
+    body.innerHTML = `<tr><td colspan="3" class="muted">你还没加“例外国家”。默认已内置 IT/DE/FR/ES…→EU。</td></tr>`;
+    return;
+  }
+  for(const [c,s] of entries){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${escapeHtml(c)}</td>
+      <td class="mono">${escapeHtml(s)}</td>
+      <td><button class="rowbtn danger" data-del="${escapeHtml(c)}">删除</button></td>
+    `;
+    body.appendChild(tr);
+  }
+  body.querySelectorAll("button[data-del]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const c = btn.getAttribute("data-del");
+      delete RULES.spec_map[c];
+      bumpAndSave(`已删除 spec_map：${c}`);
+    });
+  });
+}
+function renderContainsTable(){
+  const body = el("containsBody");
+  body.innerHTML = "";
+  const list = (RULES.contains_map||[]).slice().sort((a,b)=>String(a.pattern).localeCompare(String(b.pattern)));
+  if(list.length===0){
+    body.innerHTML = `<tr><td colspan="3" class="muted">暂无关键词直出规则。</td></tr>`;
+    return;
+  }
+  list.forEach((r, idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${escapeHtml(r.pattern||"")}</td>
+      <td class="mono">${escapeHtml(r.output_sku||"")}</td>
+      <td><button class="rowbtn danger" data-i="${idx}">删除</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll("button[data-i]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const i = Number(btn.getAttribute("data-i"));
+      RULES.contains_map.splice(i,1);
+      bumpAndSave("已删除 contains_map");
+    });
+  });
+}
+function renderModelAliasTable(){
+  const body = el("modelAliasBody");
+  body.innerHTML = "";
+  const list = (RULES.model_alias||[]).slice().sort((a,b)=>String(a.from).localeCompare(String(b.from)));
+  if(list.length===0){
+    body.innerHTML = `<tr><td colspan="3" class="muted">暂无型号修正规则。</td></tr>`;
+    return;
+  }
+  list.forEach((r, idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${escapeHtml(r.from||"")}</td>
+      <td class="mono">${escapeHtml(r.to||"")}</td>
+      <td><button class="rowbtn danger" data-i="${idx}">删除</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll("button[data-i]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const i = Number(btn.getAttribute("data-i"));
+      RULES.model_alias.splice(i,1);
+      bumpAndSave("已删除 model_alias");
+    });
+  });
+}
+function renderKeySufTable(){
+  const body = el("keySufBody");
+  body.innerHTML = "";
+  const list = (RULES.model_keyword_suffix||[]).slice().sort((a,b)=>String(a.keyword).localeCompare(String(b.keyword)));
+  if(list.length===0){
+    body.innerHTML = `<tr><td colspan="3" class="muted">暂无“关键词后缀”规则。</td></tr>`;
+    return;
+  }
+  list.forEach((r, idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${escapeHtml(r.keyword||"")}</td>
+      <td class="mono">${escapeHtml(r.suffix||"")}</td>
+      <td><button class="rowbtn danger" data-i="${idx}">删除</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll("button[data-i]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const i = Number(btn.getAttribute("data-i"));
+      RULES.model_keyword_suffix.splice(i,1);
+      bumpAndSave("已删除 model_keyword_suffix");
+    });
+  });
+}
+function renderColorMapTable(){
+  const body = el("colorMapBody");
+  body.innerHTML = "";
+  const list1 = (RULES.color_maps||[]).map(r=>({...r, _type:"token"}));
+  const list2 = (RULES.pinyin_color_maps||[]).map(r=>({...r, _type:"pinyin"}));
+  const list = list1.concat(list2).sort((a,b)=>String(a.from).localeCompare(String(b.from)));
+  if(list.length===0){
+    body.innerHTML = `<tr><td colspan="4" class="muted">暂无颜色映射。</td></tr>`;
+    return;
+  }
+  list.forEach((r, idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${escapeHtml(r.from||"")}</td>
+      <td class="mono">${escapeHtml(r.to||"")}</td>
+      <td class="mono">${escapeHtml(r._type==="token" ? (r.model_prefix||"") : "(拼音)")}</td>
+      <td><button class="rowbtn danger" data-idx="${idx}" data-type="${r._type}">删除</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll("button[data-idx]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const idx = Number(btn.getAttribute("data-idx"));
+      const typ = btn.getAttribute("data-type");
+      if(typ==="token"){
+        const tokenList = (RULES.color_maps||[]);
+        const merged = tokenList.map(r=>({...r, _type:"token"}))
+          .concat((RULES.pinyin_color_maps||[]).map(r=>({...r,_type:"pinyin"})))
+          .sort((a,b)=>String(a.from).localeCompare(String(b.from)));
+        const target = merged[idx];
+        const pos = tokenList.findIndex(x=>x.from===target.from && x.to===target.to && (x.model_prefix||"")===(target.model_prefix||""));
+        if(pos>=0) tokenList.splice(pos,1);
+      }else{
+        const pList = (RULES.pinyin_color_maps||[]);
+        const merged = (RULES.color_maps||[]).map(r=>({...r, _type:"token"}))
+          .concat(pList.map(r=>({...r,_type:"pinyin"})))
+          .sort((a,b)=>String(a.from).localeCompare(String(b.from)));
+        const target = merged[idx];
+        const pos = pList.findIndex(x=>x.from===target.from && x.to===target.to);
+        if(pos>=0) pList.splice(pos,1);
       }
-      return used;
-    }
-    function updateGridMeta(tableId, columns){
-      const cfg = GRID_META[tableId];
-      if(!cfg) return;
-      const usedEl = $(cfg.usedId);
-      const pasteEl = $(cfg.pasteId);
-      if(usedEl) usedEl.textContent = `已用 ${countGridUsedRows(tableId, columns)} 行`;
-      if(pasteEl){
-        const stat = gridStats[tableId];
-        pasteEl.textContent = stat.pastedRows > 0 ? `最近粘贴 ${stat.pastedRows} 行` : "最近未粘贴";
-      }
-    }
-    function resetGridMeta(tableId){
-      if(gridStats[tableId]) gridStats[tableId] = { pastedRows: 0, pastedCols: 0 };
-      updateGridMeta(tableId, getGridColumns(tableId));
-    }
-    function recordGridPaste(tableId, rows, cols){
-      if(gridStats[tableId]) gridStats[tableId] = { pastedRows: rows, pastedCols: cols };
-      updateGridMeta(tableId, getGridColumns(tableId));
-      const label = GRID_META[tableId]?.label || tableId;
-      setStatus(`${label}已粘贴 ${rows} 行${cols ? ` × ${cols} 列` : ""}。`, true);
-    }
-    function createGridCell(r, c, tableId, columns){
-      const td = document.createElement("td");
-      const div = document.createElement("div");
-      div.className = "cell";
-      div.contentEditable = "true";
-      div.dataset.r = String(r);
-      div.dataset.c = String(c);
-      div.addEventListener("paste", (e)=>onPasteIntoGrid(e, tableId, columns));
-      div.addEventListener("input", ()=>{
-        syncCellTitle(div);
-        updateGridMeta(tableId, columns);
-      });
-      div.addEventListener("keydown", (e)=>{
-        if(e.key === "Enter") e.preventDefault();
-      });
-      td.appendChild(div);
-      return td;
-    }
+      bumpAndSave("已删除颜色映射");
+    });
+  });
+}
 
-    function buildGrid(tableId, columns, initialRows=50){
-      const table = $(tableId);
-      table.innerHTML = "";
-      const thead = document.createElement("thead");
-      const trh = document.createElement("tr");
-      columns.forEach(c=>{
-        const th = document.createElement("th");
-        th.textContent = c;
-        trh.appendChild(th);
-      });
-      thead.appendChild(trh);
+/** ==============
+ * 规则校验 + 存储
+ * ============== */
+function validateRules(r){
+  if(!r) throw new Error("规则为空");
+  if(!Array.isArray(r.allowed_specs) || r.allowed_specs.length===0) throw new Error("allowed_specs 必须是数组");
+  if(!Array.isArray(r.contains_map)) throw new Error("contains_map 必须是数组");
+  if(!Array.isArray(r.model_alias)) throw new Error("model_alias 必须是数组");
+  if(!Array.isArray(r.model_keyword_suffix)) throw new Error("model_keyword_suffix 必须是数组");
+  if(!Array.isArray(r.color_maps)) throw new Error("color_maps 必须是数组");
+  if(!Array.isArray(r.pinyin_color_maps)) throw new Error("pinyin_color_maps 必须是数组");
+  if(typeof r.spec_map !== "object") throw new Error("spec_map 必须是对象");
+  if(typeof r.no_fallback !== "boolean") throw new Error("no_fallback 必须是布尔值");
+  if(!r.title_can_fill) r.title_can_fill = {model:true,color:true,spec:false};
+  return true;
+}
+function saveRulesToLocal(r){
+  localStorage.setItem("MSKU_RULES_COUNTRY_ONLY_FEISHU_V2", JSON.stringify(r));
+}
+function loadRulesFromLocal(){
+  try{
+    const s = localStorage.getItem("MSKU_RULES_COUNTRY_ONLY_FEISHU_V2");
+    if(!s) return null;
+    const obj = JSON.parse(s);
+    validateRules(obj);
+    return obj;
+  }catch(_){
+    return null;
+  }
+}
 
-      const tbody = document.createElement("tbody");
-      for(let r=0;r<initialRows;r++){
-        const tr = document.createElement("tr");
-        for(let c=0;c<columns.length;c++){
-          tr.appendChild(createGridCell(r, c, tableId, columns));
-        }
-        tbody.appendChild(tr);
-      }
-      table.appendChild(thead);
-      table.appendChild(tbody);
-      resetGridMeta(tableId);
-    }
-    function addRows(tableId, columns, n=50){
-      const table = $(tableId);
-      const tbody = table.querySelector("tbody");
-      const startR = tbody.children.length;
-      for(let r=0;r<n;r++){
-        const tr = document.createElement("tr");
-        for(let c=0;c<columns.length;c++){
-          tr.appendChild(createGridCell(startR + r, c, tableId, columns));
-        }
-        tbody.appendChild(tr);
-      }
-      updateGridMeta(tableId, columns);
-    }
-    function clearGrid(tableId){
-      $(tableId).querySelectorAll(".cell").forEach(cell=>setCellText(cell, ""));
-      resetGridMeta(tableId);
-    }
-    function ensureRows(tableId, columns, needRows){
-      const tbody = $(tableId).querySelector("tbody");
-      const cur = tbody.children.length;
-      if(needRows > cur) addRows(tableId, columns, needRows - cur);
-    }
-    function parseClipboardGrid(text){
-      const rows = text.replace(/\r/g,"").split("\n");
-      if(rows.length && rows[rows.length-1]==="") rows.pop();
-      return rows.map(line => line.split("\t"));
-    }
-    function onPasteIntoGrid(e, tableId, columns){
-      e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData("text");
-      const matrix = parseClipboardGrid(text);
-      if(matrix.length===0) return;
+/** ==============
+ * 标准库索引
+ * ============== */
+function parseStandardSku(sku, allowedSet){
+  const parts = sku.split("-").filter(Boolean);
+  if(parts.length < 2) return {ok:false};
+  const last = parts[parts.length-1];
+  if(allowedSet.has(last)){
+    if(parts.length < 3) return {ok:false};
+    const spec = last;
+    const color = parts[parts.length-2];
+    const model = parts.slice(0, parts.length-2).join("-");
+    if(!model || !color) return {ok:false};
+    return {ok:true, model, color, spec};
+  }else{
+    // 允许无spec的SKU（如 STAND / Keyb / PEN 等）→ 用 NO 作为内部spec占位，便于匹配 contains_map
+    const model = parts.slice(0, parts.length-1).join("-");
+    const color = parts[parts.length-1];
+    if(!model || !color) return {ok:false};
+    return {ok:true, model, color, spec:"NO"}; // 不影响你正常机型（因为机型必有spec）
+  }
+}
+function buildStandardIndex(wb, rules){
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:""});
 
-      const active = document.activeElement;
-      if(!active || !active.classList.contains("cell")) return;
-
-      const r0 = Number(active.dataset.r);
-      const c0 = Number(active.dataset.c);
-
-      ensureRows(tableId, columns, r0 + matrix.length);
-
-      const tbody = $(tableId).querySelector("tbody");
-      let pastedCols = 0;
-      for(let r=0;r<matrix.length;r++){
-        const row = matrix[r];
-        pastedCols = Math.max(pastedCols, row.length);
-        const tr = tbody.children[r0 + r];
-        if(!tr) continue;
-        const cells = tr.querySelectorAll(".cell");
-        for(let c=0;c<row.length;c++){
-          const tc = c0 + c;
-          if(tc >= columns.length) break;
-          setCellText(cells[tc], row[c]);
-        }
-      }
-      recordGridPaste(tableId, matrix.length, Math.min(columns.length - c0, pastedCols));
-    }
-    function readGridData(tableId, columns){
-      const tbody = $(tableId).querySelector("tbody");
-      const rows = [];
-      for(const tr of tbody.children){
-        const obj = {};
-        let allEmpty = true;
-        const cells = tr.querySelectorAll(".cell");
-        columns.forEach((col, idx)=>{
-          const v = (cells[idx]?.textContent ?? "").trim();
-          obj[col] = v;
-          if(v !== "") allEmpty = false;
-        });
-        if(!allEmpty) rows.push(obj);
-      }
-      return rows;
-    }
-    function fillGridFromObjects(tableId, columns, data){
-      clearGrid(tableId);
-      ensureRows(tableId, columns, Math.max(50, data.length));
-      const tbody = $(tableId).querySelector("tbody");
-      for(let r=0;r<data.length;r++){
-        const tr = tbody.children[r];
-      const cells = tr.querySelectorAll(".cell");
-      for(let c=0;c<columns.length;c++){
-        setCellText(cells[c], data[r][columns[c]] ?? "");
-      }
-    }
-    updateGridMeta(tableId, columns);
+  let skuCol = 0;
+  const header = aoa[0]?.map(x=>String(x||"").trim());
+  if(header && header.length){
+    const idx = header.findIndex(h=>String(h).toUpperCase()==="SKU");
+    if(idx>=0) skuCol = idx;
   }
 
-    function renderTable(containerId, rows){
-      const wrap = $(containerId);
-      if(!rows || rows.length===0){
-        wrap.innerHTML = '<div class="sub">空</div>';
-        return;
-      }
-      const cols = Object.keys(rows[0]);
-      const thead = `<tr>${cols.map(c=>`<th>${escapeHtml(c)}</th>`).join("")}</tr>`;
-      const tbody = rows.map(r=>`<tr>${cols.map(c=>`<td><div class="cell" style="border:0;box-shadow:none;background:#fff" contenteditable="false">${escapeHtml(String(r[c]??""))}</div></td>`).join("")}</tr>`).join("");
-      wrap.innerHTML = `<div class="sheet-wrap"><div class="sheet-scroll" style="max-height:420px"><table class="sheet"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div></div>`;
+  const skuList = [];
+  for(let i=1;i<aoa.length;i++){
+    const v = String(aoa[i]?.[skuCol] ?? "").trim();
+    if(v) skuList.push(v);
+  }
+  if(skuList.length===0){
+    for(let i=0;i<aoa.length;i++){
+      const v = String(aoa[i]?.[0] ?? "").trim();
+      if(v && String(v).toUpperCase()!=="SKU") skuList.push(v);
     }
+  }
 
-    function rowsToTSV(rows, cols){
-      if(!rows || rows.length===0) return "";
-      const c = cols && cols.length ? cols : Object.keys(rows[0]);
-      const lines = [];
-      lines.push(c.join("\t"));
-      for(const r of rows){
-        lines.push(c.map(k => String(r[k]??"")).join("\t"));
-      }
-      return lines.join("\n");
+  const allowed = new Set(rules.allowed_specs || ["US","UK","JP","EU","NO"]);
+  const skuSet = new Set();
+  const index = new Map(); // model|color|spec -> sku
+  const modelSet = new Set();
+  const colorSet = new Set();
+  const modelColorSpecs = new Map();
+  let badSkuCount = 0;
+
+  for(const rawSku of skuList){
+    const sku = normalizeSku(rawSku);
+    if(!sku) continue;
+    skuSet.add(sku);
+
+    const parsed = parseStandardSku(sku, allowed);
+    if(!parsed.ok){ badSkuCount++; continue; }
+
+    const {model,color,spec} = parsed;
+    modelSet.add(model);
+    colorSet.add(color);
+
+    const key = `${model}|${color}|${spec}`;
+    if(!index.has(key)) index.set(key, sku);
+
+    const mc = `${model}|${color}`;
+    if(!modelColorSpecs.has(mc)) modelColorSpecs.set(mc, new Set());
+    modelColorSpecs.get(mc).add(spec);
+  }
+
+  const onlyNo = new Set();
+  for(const [mc, set] of modelColorSpecs.entries()){
+    if(set.size===1 && set.has("NO")) onlyNo.add(mc);
+  }
+
+  const modelList = Array.from(modelSet).sort((a,b)=>b.length - a.length);
+  return { skuCount: skuSet.size, badSkuCount, skuSet, index, modelSet, modelList, colorSet, onlyNo };
+}
+
+/** ==============
+ * Listing 解析
+ * ============== */
+function parseListing(wb){
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:""});
+
+  let hasHeader = false;
+  let cM=0, cT=1, cC=2;
+  const header = aoa[0]?.map(x=>String(x||"").trim());
+  if(header && header.length){
+    const up = header.map(h=>h.toUpperCase());
+    const iM = up.findIndex(h=>h==="MSKU" || h.includes("MSKU"));
+    const iT = up.findIndex(h=>h.includes("标题") || h.includes("TITLE"));
+    const iC = up.findIndex(h=>h==="国家" || h.includes("COUNTRY") || h.includes("站点") || h.includes("SITE"));
+    if(iM>=0){ cM=iM; hasHeader=true; }
+    if(iT>=0){ cT=iT; hasHeader=true; }
+    if(iC>=0){ cC=iC; hasHeader=true; }
+  }
+
+  const rows = [];
+  const start = hasHeader ? 1 : 0;
+  for(let i=start;i<aoa.length;i++){
+    const msku = String(aoa[i]?.[cM] ?? "").trim();
+    const title = String(aoa[i]?.[cT] ?? "").trim();
+    const country = String(aoa[i]?.[cC] ?? "").trim();
+    if(!msku && !title && !country) continue;
+    rows.push({rownum: i+1, msku, title, country});
+  }
+  return {sheetName, rows};
+}
+
+/** ==============
+ * 规格：按国家（先用户spec_map，后默认国家集合）
+ * ============== */
+function resolveSpecByCountry(country, rules){
+  const audit = [];
+  const allowed = new Set(rules.allowed_specs||["US","UK","JP","EU","NO"]);
+  const mp = rules.spec_map || {};
+  const c = String(country||"").toUpperCase().trim().replaceAll("-","");
+
+  if(!c){
+    audit.push("SPEC_EMPTY_COUNTRY");
+    return {spec:"", audit};
+  }
+
+  // 1) 用户配置优先（覆盖默认）
+  if(mp[c]){
+    const s = String(mp[c]).toUpperCase();
+    if(allowed.has(s)){
+      audit.push("SPEC_FROM_USER_SPEC_MAP");
+      return {spec:s, audit};
     }
-    function downloadText(filename, text, mime){
-      const blob = new Blob([text], {type: mime});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+  }
+
+  // 2) 默认国家集合
+  for(const k of ["US","UK","JP","EU","NO"]){
+    if(DEFAULT_COUNTRY_GROUPS[k]?.has(c)){
+      audit.push("SPEC_FROM_DEFAULT_GROUPS");
+      return {spec:k, audit};
     }
-    function enableDownloads(enabled){
-      $("btnDownloadTSV").disabled = !enabled;
-      $("btnDownloadXLSX").disabled = !enabled;
+  }
+
+  audit.push("SPEC_COUNTRY_NOT_RECOGNIZED:" + c);
+  return {spec:"", audit};
+}
+
+/** ==============
+ * 型号改写：model_alias + keyword suffix（Energy/VIP）
+ * ============== */
+function preRewriteModel(msku, rules, audit){
+  let s = msku;
+
+  for(const a of (rules.model_alias||[])){
+    const from = normalizeText(a.from||"");
+    const to = normalizeText(a.to||"");
+    if(!from || !to) continue;
+    if(s === from || s.startsWith(from + "-")){
+      s = to + s.slice(from.length);
+      audit.push("MODEL_ALIAS:" + from + "->" + to);
     }
-    async function readExcelFile(file){
-      if(!window.XLSX) throw new Error("XLSX库未加载：无法导出XLSX（可用TSV下载）。");
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, {type:"array"});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      return XLSX.utils.sheet_to_json(ws, {defval:""});
-    }
-    function applySheetFont(ws, fontName, fontSize){
-      if(!ws || !ws["!ref"] || !window.XLSX?.utils) return;
-      const range = XLSX.utils.decode_range(ws["!ref"]);
-      for(let r = range.s.r; r <= range.e.r; r++){
-        for(let c = range.s.c; c <= range.e.c; c++){
-          const addr = XLSX.utils.encode_cell({r, c});
-          const cell = ws[addr];
-          if(!cell) continue;
-          const s = cell.s || {};
-          const f = s.font || {};
-          cell.s = { ...s, font: { ...f, name: fontName, sz: fontSize } };
+  }
+
+  const parts = s.split("-").filter(Boolean);
+  if(parts.length){
+    let first = parts[0];
+    for(const r of (rules.model_keyword_suffix||[])){
+      const kw = String(r.keyword||"").toUpperCase();
+      const suf = String(r.suffix||"").toUpperCase();
+      if(!kw || !suf) continue;
+      if(first.includes(kw)){
+        const base = first.replaceAll(kw, "");
+        if(base){
+          first = base + suf;
+          explainPushOnce(audit, "MODEL_KEY_SUFFIX");
+          audit.push("MODEL_KEY_SUFFIX:" + kw + "=>" + suf);
         }
       }
     }
-    function applyWorkbookFont(wb, fontName, fontSize){
-      if(!wb || !wb.SheetNames || !wb.Sheets) return;
-      for(const name of wb.SheetNames){
-        applySheetFont(wb.Sheets[name], fontName, fontSize);
-      }
-    }
+    parts[0] = first;
+    s = parts.join("-");
+  }
+  return s;
+}
+function explainPushOnce(audit, key){
+  // 占位：防止你以后想加“解释段”时重复堆；先留着不做展示
+  return;
+}
 
-    const reviewModalState = {
-      resolve: null,
-      keyHandler: null
-    };
-    function closeReviewModal(result){
-      if(!reviewModalState.resolve) return;
-      const done = reviewModalState.resolve;
-      reviewModalState.resolve = null;
-      if(reviewModalState.keyHandler){
-        document.removeEventListener("keydown", reviewModalState.keyHandler);
-        reviewModalState.keyHandler = null;
-      }
-      $("reviewModalMask").classList.add("hidden");
-      document.body.style.overflow = "";
-      done(!!result);
-    }
-    function showReviewModal(opts){
-      const {
-        kicker = "生成前审核",
-        title = "请确认",
-        main = "",
-        sub = "",
-        confirmText = "确认",
-        cancelText = "取消",
-        showCancel = true
-      } = (opts || {});
+/** ==============
+ * 型号：最长前缀匹配（-V/-E算型号一部分，由标准库决定）
+ * ============== */
+function longestModelFromPrefix(text, modelList){
+  if(!text) return "";
+  for(const m of modelList){
+    if(text === m || text.startsWith(m + "-")) return m;
+  }
+  return "";
+}
+function findModelInTitle(title, modelList){
+  if(!title) return "";
+  const t1 = normalizeText(title);
+  const t2 = t1.replaceAll("-","");
+  let best = "";
+  for(const m of modelList){
+    if(m.length <= best.length) continue;
+    const m2 = m.replaceAll("-","");
+    if(t1.includes(m) || t2.includes(m2)) best = m;
+  }
+  return best;
+}
 
-      if(reviewModalState.resolve) closeReviewModal(false);
-
-      $("reviewModalKicker").textContent = kicker;
-      $("reviewModalTitle").textContent = title;
-      $("reviewModalMain").innerHTML = escapeHtml(main).replace(/\n/g, "<br>");
-
-      if(sub){
-        $("reviewModalSub").classList.remove("hidden");
-        $("reviewModalSub").innerHTML = escapeHtml(sub).replace(/\n/g, "<br>");
+/** ==============
+ * 颜色：token扫描 → 映射/拼音 → 必须存在标准库颜色集合
+ * ============== */
+function mapColorToken(token, model, rules){
+  let t = token.toUpperCase();
+  for(const r of (rules.color_maps||[])){
+    const from = String(r.from||"").toUpperCase();
+    const to = String(r.to||"").toUpperCase();
+    if(!from || !to) continue;
+    if(t === from){
+      const mp = String(r.model_prefix||"").toUpperCase();
+      if(mp){
+        if(model && model.toUpperCase().startsWith(mp)) return to;
       }else{
-        $("reviewModalSub").classList.add("hidden");
-        $("reviewModalSub").textContent = "";
+        return to;
       }
-
-      $("reviewModalConfirm").textContent = confirmText;
-      $("reviewModalCancel").textContent = cancelText;
-      $("reviewModalCancel").classList.toggle("hidden", !showCancel);
-
-      $("reviewModalMask").classList.remove("hidden");
-      document.body.style.overflow = "hidden";
-      setTimeout(()=>$("reviewModalConfirm").focus(), 0);
-
-      return new Promise((resolve)=>{
-        reviewModalState.resolve = resolve;
-        reviewModalState.keyHandler = (e)=>{
-          if(e.key === "Escape") closeReviewModal(false);
-          if(e.key === "Enter") closeReviewModal(true);
-        };
-        document.addEventListener("keydown", reviewModalState.keyHandler);
-      });
     }
-    $("reviewModalMask").addEventListener("click", (e)=>{
-      if(e.target === $("reviewModalMask")) closeReviewModal(false);
+  }
+  return t;
+}
+function mapPinyinColor(token, rules){
+  let t = token.toUpperCase();
+  for(const r of (rules.pinyin_color_maps||[])){
+    const from = String(r.from||"").toUpperCase();
+    const to = String(r.to||"").toUpperCase();
+    if(from && to && t === from) return to;
+  }
+  return t;
+}
+function pickColor(text, std, rules, model, audit, fromWhere){
+  if(!text) return "";
+  const norm = normalizeText(text);
+  const tokens = norm.split("-").filter(Boolean);
+  for(const t0 of tokens){
+    let t = String(t0).toUpperCase();
+
+    const mapped = mapColorToken(t, model, rules);
+    if(mapped !== t){
+      audit.push(`COLOR_MAP_${fromWhere}:${t}->${mapped}`);
+      t = mapped;
+    }
+    const pm = mapPinyinColor(t, rules);
+    if(pm !== t){
+      audit.push(`PINYIN_COLOR_${fromWhere}:${t}->${pm}`);
+      t = pm;
+    }
+
+    if(std.colorSet.has(t)){
+      audit.push(`COLOR_FROM_${fromWhere}`);
+      return t;
+    }
+  }
+  return "";
+}
+function resolveColor(msku, title, std, rules, model, audit){
+  let c = pickColor(msku, std, rules, model, audit, "MSKU");
+  if(c) return c;
+  if(rules.title_can_fill?.color){
+    c = pickColor(title, std, rules, model, audit, "TITLE");
+    if(c) return c;
+  }
+  return "";
+}
+
+/** ==============
+ * 核心：单行回填
+ * ============== */
+function mapOne(row, std, rules){
+  const rawMsku = row.msku || "";
+  const rawTitle = row.title || "";
+  const rawCountry = row.country || "";
+
+  let msku = normalizeText(rawMsku);
+  let title = String(rawTitle||""); // 标题不强行normalize，下面用 findModelInTitle/ pickColor 内部处理
+  let country = String(rawCountry||"").trim();
+
+  // 1) contains_map：STAND/SUPPORT 直出
+  for(const rule of (rules.contains_map||[])){
+    const p = normalizeText(rule.pattern||"");
+    if(!p) continue;
+    if(msku.includes(p)){
+      const outSku = normalizeSku(rule.output_sku||"");
+      if(std.skuSet.has(outSku)){
+        return pack(row, outSku, "", "RULE_CONTAINS_MAP", `包含关键词:${p}`);
+      }
+      return pack(row, "匹配不到", "", "RULE_CONTAINS_MAP_NOT_IN_STD", `包含关键词:${p}; 输出不在标准库:${outSku}`);
+    }
+  }
+
+  const audit = [];
+
+  // 2) 型号预改写
+  msku = preRewriteModel(msku, rules, audit);
+
+  // 3) 型号：先MSKU前缀最长匹配，失败再标题补
+  let model = longestModelFromPrefix(msku, std.modelList);
+  if(model) audit.push("MODEL_FROM_MSKU");
+  else if(rules.title_can_fill?.model){
+    model = findModelInTitle(title, std.modelList);
+    if(model) audit.push("MODEL_FROM_TITLE");
+  }
+
+  // 4) 颜色：MSKU → 标题
+  const color = resolveColor(msku, title, std, rules, model, audit);
+
+  // 5) 规格：只按国家（C列）
+  const sRes = resolveSpecByCountry(country, rules);
+  const spec = sRes.spec;
+  audit.push(...sRes.audit);
+
+  // 6) 缺型号/颜色 → 匹配不到
+  if(!model || !color){
+    const miss = [!model?"MISSING_MODEL":"", !color?"MISSING_COLOR":""].filter(Boolean).join(";");
+    return pack(row, "匹配不到", "", "UNMATCH_MISSING_MODEL_OR_COLOR", miss || "缺关键信息");
+  }
+
+  // 7) 精确匹配
+  if(spec){
+    const key = `${model}|${color}|${spec}`;
+    const sku = std.index.get(key);
+    if(sku){
+      return pack(row, sku, `${model}-${color}-${spec}`, "MATCH_EXACT", audit.join("|"));
+    }
+  }else{
+    // spec为空 → 标记
+    audit.push("SPEC_EMPTY");
+  }
+
+  // 8) NO兜底（同型号+颜色只有NO）
+  if(rules.no_fallback){
+    const mc = `${model}|${color}`;
+    if(std.onlyNo.has(mc)){
+      const k2 = `${model}|${color}|NO`;
+      const sku2 = std.index.get(k2);
+      if(sku2){
+        audit.push("NO_FALLBACK_ONLY_NO_VARIANT");
+        return pack(row, sku2, `${model}-${color}-NO`, "MATCH_NO_FALLBACK", audit.join("|"));
+      }
+    }
+  }
+
+  const keyShow = `${model}-${color}-${spec||"?"}`;
+  const reason = spec ? "标准库无此组合" : "国家缺失/未识别导致规格为空";
+  return pack(row, "匹配不到", keyShow, spec ? "UNMATCH_NOT_IN_STD" : "UNMATCH_SPEC_EMPTY", reason + " | " + audit.join("|"));
+}
+function pack(row, sku, clean_key, source, audit){
+  return {
+    rownum: row.rownum,
+    msku: row.msku||"",
+    title: row.title||"",
+    country: row.country||"",
+    sku,
+    clean_key: clean_key||"",
+    source,
+    audit: audit||""
+  };
+}
+
+/** ==============
+ * 批量运行 + 渲染
+ * ============== */
+function runAll(rows, std, rules){
+  const out = [];
+  for(const r of rows) out.push(mapOne(r, std, rules));
+  return out;
+}
+function renderTable(rows){
+  const tb = el("tbody");
+  tb.innerHTML = "";
+  if(!rows || rows.length===0){
+    tb.innerHTML = `<tr><td colspan="8" class="muted">还没运行。</td></tr>`;
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  const max = Math.min(rows.length, 2000);
+
+  for(let i=0;i<max;i++){
+    const r = rows[i];
+    const ok = r.sku && r.sku!=="匹配不到";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${r.rownum}</td>
+      <td class="mono">${escapeHtml(r.msku)}</td>
+      <td>${escapeHtml(r.title)}</td>
+      <td class="mono">${escapeHtml(r.country)}</td>
+      <td class="mono ${ok?"ok":"bad"}">${escapeHtml(r.sku||"")}</td>
+      <td class="mono">${escapeHtml(r.clean_key||"")}</td>
+      <td class="mono muted">${escapeHtml(r.source||"")}</td>
+      <td class="small">${escapeHtml(r.audit||"")}</td>
+    `;
+    frag.appendChild(tr);
+  }
+  if(rows.length>max){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="8" class="muted">只展示前 ${max} 行；导出包含全部 ${rows.length} 行。</td>`;
+    frag.appendChild(tr);
+  }
+  tb.appendChild(frag);
+}
+function applyView(){
+  const q = (el("qSearch").value||"").trim().toUpperCase();
+  const f = el("qFilter").value;
+  let rows = RESULTS;
+
+  if(f==="matched") rows = rows.filter(r=>r.sku && r.sku!=="匹配不到");
+  if(f==="unmatched") rows = rows.filter(r=>!r.sku || r.sku==="匹配不到");
+  if(f==="stand") rows = rows.filter(r=>String(r.source).includes("RULE_CONTAINS_MAP"));
+  if(f==="no_fallback") rows = rows.filter(r=>String(r.source).includes("MATCH_NO_FALLBACK"));
+  if(f==="alias") rows = rows.filter(r=>String(r.audit).includes("MODEL_ALIAS:"));
+  if(f==="pinyin") rows = rows.filter(r=>String(r.audit).includes("PINYIN_COLOR_"));
+  if(f==="country_missing") rows = rows.filter(r=>String(r.audit).includes("SPEC_EMPTY_COUNTRY") || String(r.audit).includes("SPEC_COUNTRY_NOT_RECOGNIZED"));
+
+  if(q){
+    rows = rows.filter(r=>{
+      const hay = [r.msku,r.title,r.country,r.sku,r.clean_key,r.source,r.audit].join(" ").toUpperCase();
+      return hay.includes(q);
     });
-    $("reviewModalCancel").addEventListener("click", ()=>closeReviewModal(false));
-    $("reviewModalConfirm").addEventListener("click", ()=>closeReviewModal(true));
-
-    async function reviewOrderMatchSwitch(demRows, supRows, currentEnabled){
-      const demandOrders = demRows.map(r => String(r["销售采购订单号"] ?? "").trim());
-      const supplyOrders = supRows.map(r => String(r["销售采购订单号"] ?? "").trim());
-      const demandHasBlank = demandOrders.some(v => v === "");
-      const supplyHasBlank = supplyOrders.some(v => v === "");
-
-      // 任一侧存在空值：自动关闭并提醒
-      if(demandHasBlank || supplyHasBlank){
-        const side = [];
-        if(demandHasBlank) side.push("需求侧");
-        if(supplyHasBlank) side.push("供给侧");
-        await showReviewModal({
-          kicker: "订单号",
-          title: "本次不按订单号匹配",
-          main: `${side.join("和")}存在空订单号。`,
-          sub: "本次忽略订单号，只按型号/颜色/规格分配。",
-          confirmText: "知道了",
-          showCancel: false
-        });
-        return false;
-      }
-
-      const currentText = currentEnabled ? "当前默认：开启" : "当前默认：关闭";
-      const enable = await showReviewModal({
-        kicker: "订单号",
-        title: "本次是否按订单号匹配？",
-        main: `两边订单号都已填写。\n${currentText}`,
-        sub: "开启：在库/在途/其他状态统一按订单号。关闭：全部忽略订单号。",
-        confirmText: "按订单号",
-        cancelText: "忽略订单号"
-      });
-      return enable;
-    }
-    async function reviewSpecStrictSwitch(currentEnabled){
-      const currentText = currentEnabled ? "当前默认：开启" : "当前默认：关闭";
-      const enable = await showReviewModal({
-        kicker: "规格",
-        title: "本次是否只按同规格分配？",
-        main: currentText,
-        sub: "开启：只分同规格。关闭：同规格跑完后再补缺，美规结余先补日规。",
-        confirmText: "只同规格",
-        cancelText: "允许补缺"
-      });
-      return enable;
-    }
-    function mapSiteForExport(site){
-      const raw = String(site ?? "").trim();
-      const key = raw.toUpperCase();
-      const oneThreeSites = new Set(["DE","ES","IT","FR","US","UK","MX","CA"]);
-      if(oneThreeSites.has(key)) return `自营一三部${key}`;
-      if(key === "JP") return "自营二七部JP";
-      if(raw === "未分配/留库存") return "自营一三部JP";
-      return raw;
-    }
-
-    function toPriorityValue(raw){
-      if(raw == null || raw === "") return Number.POSITIVE_INFINITY;
-      const n = Number(raw);
-      return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
-    }
-    function sortByPriority(rows, priorityDir){
-      const asc = priorityDir === "asc";
-      return [...rows].sort((a,b)=>{
-        const ap = toPriorityValue(a.__prio);
-        const bp = toPriorityValue(b.__prio);
-        if(ap !== bp) return asc ? (ap - bp) : (bp - ap);
-        return (a.__idx ?? 0) - (b.__idx ?? 0);
-      });
-    }
-
-    function validateSupplyRows(supplyRows){
-      const hasAnyStatus = supplyRows.some(r => String(r["库存状态"] ?? "").trim() !== "");
-      const hasInStock = supplyRows.some(r => String(r["库存状态"] ?? "").trim() === "在库");
-      const hasInTransit = supplyRows.some(r => String(r["库存状态"] ?? "").trim() === "在途");
-      const ignoreStatus = !hasAnyStatus || !(hasInStock && hasInTransit);
-      const validRows = [];
-      const skippedRows = [];
-
-      for(let i=0;i<supplyRows.length;i++){
-        const r = supplyRows[i];
-        const raw = String(r["库存状态"] ?? "").trim();
-        if(!raw){
-          if(ignoreStatus){
-            validRows.push(r);
-          }else{
-            skippedRows.push(i + 1);
-          }
-          continue;
-        }
-        validRows.push(r);
-      }
-      return { validRows, skippedRows, ignoreStatus, hasAnyStatus, hasInStock, hasInTransit };
-    }
-    function validateDemandRows(demandRows, orderMatchEnabled){
-      if(!orderMatchEnabled) return;
-      for(let i=0;i<demandRows.length;i++){
-        const r = demandRows[i];
-        const raw = String(r["销售采购订单号"] ?? "").trim();
-        if(!raw) throw new Error(`需求明细：第${i+1}行“销售采购订单号”为空（开关=开时必须有值）。`);
-      }
-    }
-
-    function makeSupplyPool(supplyRows){
-      return supplyRows.map((r, idx)=>({
-        __idx: idx,
-        order:  (r["销售采购订单号"] ?? r["仓库名称"] ?? "").trim(),
-        mat:    (r["物料编码"] ?? "").trim(),
-        status: normStockStatus(r["库存状态"]),
-        model:  normKey(r["销售型号"] ?? r["自营销售型号"] ?? ""),
-        color:  (r["颜色"] ?? r["颜色简易版"] ?? "").trim(),
-        spec:   normSpec(r["规格"] ?? r["充电器版本"] ?? ""),
-        qtyLeft: toInt(r["求和项:需求数量"] ?? r["求和项:可用量(主单位)"] ?? 0),
-      })).filter(x => x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
-    }
-
-    function matchStatusPhase(status, statusPhase){
-      if(statusPhase === "all") return true;
-      if(statusPhase === "inStock") return status === "在库";
-      if(statusPhase === "inTransit") return status === "在途";
-      if(statusPhase === "other") return status !== "在库" && status !== "在途";
-      return true;
-    }
-
-    // ignoreStatus=true: 完全按原顺序吃；statusPhase!=all: 只消耗当前阶段允许的库存状态
-    function consumeFromSupply(pool, matchFn, qtyNeed, options={}){
-      const { ignoreStatus=false, statusPhase="all" } = options;
-      const allocs = [];
-      let need = toInt(qtyNeed);
-      if(need <= 0) return allocs;
-
-      if(ignoreStatus){
-        for(const s of pool){
-          if(need <= 0) break;
-          if(s.qtyLeft <= 0) continue;
-          if(!matchFn(s)) continue;
-          const take = Math.min(need, s.qtyLeft);
-          s.qtyLeft -= take;
-          need -= take;
-          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
-        }
-        return allocs;
-      }
-
-      if(statusPhase !== "all"){
-        for(const s of pool){
-          if(need <= 0) break;
-          if(s.qtyLeft <= 0) continue;
-          if(!matchStatusPhase(s.status, statusPhase)) continue;
-          if(!matchFn(s)) continue;
-
-          const take = Math.min(need, s.qtyLeft);
-          s.qtyLeft -= take;
-          need -= take;
-
-          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
-        }
-        return allocs;
-      }
-
-      function passByStatus(statusMatch){
-        for(const s of pool){
-          if(need <= 0) break;
-          if(s.qtyLeft <= 0) continue;
-          if(!statusMatch(s.status)) continue;
-          if(!matchFn(s)) continue;
-
-          const take = Math.min(need, s.qtyLeft);
-          s.qtyLeft -= take;
-          need -= take;
-
-          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
-        }
-      }
-      passByStatus((status)=>status === "在库");
-      passByStatus((status)=>status === "在途");
-      passByStatus((status)=>status !== "在库" && status !== "在途");
-      return allocs;
-    }
-
-    function consolidateOut(rows){
-      const m = new Map();
-      for(const r of rows){
-        const k = [r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
-        const cur = m.get(k) || { ...r, "需求数量": 0 };
-        cur["需求数量"] = toInt(cur["需求数量"]) + toInt(r["需求数量"]);
-        m.set(k, cur);
-      }
-      return Array.from(m.values());
-    }
-
-    function runAllocation(demandRowsRaw, supplyRowsRaw, opts){
-      const {priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled} = opts;
-      const siteName = (unassignedSite || "未分配/留库存").trim() || "未分配/留库存";
-      const quality = [];
-
-      function addQuality(type, rowNo, detail){
-        quality.push({
-          "类型": type,
-          "行号": rowNo == null ? "-" : String(rowNo),
-          "说明": detail
-        });
-      }
-
-      validateDemandRows(demandRowsRaw, orderMatchEnabled);
-      const { validRows: validSupplyRows, skippedRows, ignoreStatus, hasAnyStatus, hasInStock, hasInTransit } = validateSupplyRows(supplyRowsRaw);
-      if(ignoreStatus){
-        if(!hasAnyStatus){
-          addQuality("库存状态忽略", "-", "库存状态整列为空，已忽略该列参与分配。");
-        }else if(!(hasInStock && hasInTransit)){
-          addQuality("库存状态未区分", "-", "库存状态列未同时出现“在库/在途”，本次按原逻辑处理，不区分两者。");
-        }
-      }
-      for(const rowNo of skippedRows){
-        addQuality("跳过供给行", rowNo, "库存状态为空，已跳过。");
-      }
-
-      const demand = [];
-      for(let idx=0; idx<demandRowsRaw.length; idx++){
-        const r = demandRowsRaw[idx];
-        const d = {
-          __idx: idx,
-          order: (r["销售采购订单号"] ?? "").trim(),
-          model: normKey(r["型号"]),
-          color: (r["颜色"] ?? "").trim(),
-          site: (r["站点（平台）"] ?? "").trim(),
-          demandQty: toInt(r["SI数量"]),
-          spec: normSpec(r["需求规格"]),
-          platform: (r["平台"] ?? "").trim(),
-          box: toInt(r["箱规信息"]),
-          __prio: (r["优先级"] ?? "").trim(),
-        };
-
-        const missing = [];
-        if(!d.model) missing.push("型号为空");
-        if(!d.site) missing.push("站点（平台）为空");
-        if(!d.spec) missing.push("需求规格为空");
-        if(missing.length){
-          addQuality("跳过需求行", idx + 1, missing.join("，"));
-          continue;
-        }
-        if(d.__prio !== "" && !Number.isFinite(Number(d.__prio))){
-          addQuality("优先级修正", idx + 1, `优先级“${d.__prio}”不是数字，已按最低优先级处理。`);
-        }
-        demand.push(d);
-      }
-
-      const supplyPool = makeSupplyPool(validSupplyRows);
-      const demandAlloc = new Map();
-      const stageAlloc = new Map();
-      let out = [];
-
-      function addOut(site, alloc){
-        out.push({
-          "库存状态": alloc.status,
-          "销售采购订单号": alloc.order,
-          "物料编码": alloc.mat,
-          "销售型号": alloc.model,
-          "颜色": alloc.color,
-          "站点": site,
-          "规格": alloc.spec,
-          "需求数量": alloc.qty,
-        });
-      }
-      function bump(dIdx, qty){
-        demandAlloc.set(dIdx, (demandAlloc.get(dIdx)||0) + toInt(qty));
-      }
-      function getStageAlloc(stageKey, dIdx){
-        return stageAlloc.get(`${stageKey}::${dIdx}`) || 0;
-      }
-      function bumpStageAlloc(stageKey, dIdx, qty){
-        const key = `${stageKey}::${dIdx}`;
-        stageAlloc.set(key, getStageAlloc(stageKey, dIdx) + toInt(qty));
-      }
-      function got(d){ return demandAlloc.get(d.__idx) || 0; }
-      function miss(d){ return Math.max(0, d.demandQty - got(d)); }
-      function orderOk(s, d){
-        if(!orderMatchEnabled) return true;
-        return s.order && d.order && s.order === d.order;
-      }
-      function sourceSpecHasOwnUnmetDemand(s, targetSpec=""){
-        for(const d of demand){
-          if(d.model !== s.model || d.color !== s.color) continue;
-          if(d.spec !== s.spec) continue;
-          if(d.spec === targetSpec) continue;
-          if(miss(d) > 0) return true;
-        }
-        return false;
-      }
-      function hasPendingDayDemandForSupply(s){
-        for(const d of demand){
-          if(d.spec !== "日") continue;
-          if(d.model !== s.model || d.color !== s.color) continue;
-          if(miss(d) > 0) return true;
-        }
-        return false;
-      }
-      function getStrictStatusPhases(){
-        return ignoreStatus ? ["all"] : ["inStock", "inTransit", "other"];
-      }
-      function getCrossStatusPhases(){
-        return ignoreStatus ? ["all"] : ["inStock", "inTransit", "other"];
-      }
-
-      function allocStrictForDemand(d, qtyPlan, stageKey=""){
-        const plan = toInt(qtyPlan);
-        const stageRemain = stageKey ? Math.max(0, plan - getStageAlloc(stageKey, d.__idx)) : plan;
-        let need = stageRemain;
-        if(need <= 0) return 0;
-
-        for(const statusPhase of getStrictStatusPhases()){
-          if(need <= 0) break;
-          const strictAllocs = consumeFromSupply(
-            supplyPool,
-            (s)=> orderOk(s,d) && s.model===d.model && s.color===d.color && s.spec===d.spec,
-            need,
-            { ignoreStatus, statusPhase }
-          );
-          for(const a of strictAllocs){
-            addOut(d.site, a);
-            bump(d.__idx, a.qty);
-            if(stageKey) bumpStageAlloc(stageKey, d.__idx, a.qty);
-            need -= a.qty;
-          }
-        }
-        return stageRemain - need;
-      }
-
-      function allocCrossForDemand(d, qtyPlan){
-        let need = toInt(qtyPlan);
-        if(need <= 0) return 0;
-
-        function canUseCrossSource(s){
-          if(!(orderOk(s,d) && s.model===d.model && s.color===d.color)) return false;
-          if(s.spec !== d.spec && sourceSpecHasOwnUnmetDemand(s, d.spec)) return false;
-          return true;
-        }
-
-        for(const statusPhase of getCrossStatusPhases()){
-          if(need <= 0) break;
-
-          // 日规缺口优先吃美规
-          if(normSpec(d.spec) === "日"){
-            const usFirst = consumeFromSupply(
-              supplyPool,
-              (s)=> canUseCrossSource(s) && s.spec !== d.spec && normSpec(s.spec)==="美",
-              need,
-              { ignoreStatus, statusPhase }
-            );
-            for(const a of usFirst){
-              addOut(d.site, a);
-              bump(d.__idx, a.qty);
-              need -= a.qty;
-            }
-            if(need <= 0) break;
-          }
-
-          const anySpec = consumeFromSupply(
-            supplyPool,
-            (s)=>{
-              if(!canUseCrossSource(s)) return false;
-              if(s.spec === d.spec) return false;
-              if(d.spec !== "日" && normSpec(s.spec) === "美" && hasPendingDayDemandForSupply(s)) return false;
-              return true;
-            },
-            need,
-            { ignoreStatus, statusPhase }
-          );
-          for(const a of anySpec){
-            addOut(d.site, a);
-            bump(d.__idx, a.qty);
-            need -= a.qty;
-          }
-        }
-        return toInt(qtyPlan) - need;
-      }
-
-      function allocQtyForDemand(d, qtyPlan, allowCrossSpec){
-        const target = toInt(qtyPlan);
-        if(target <= 0) return 0;
-        const strictDone = allocStrictForDemand(d, target);
-        const need = Math.max(0, target - strictDone);
-        if(need <= 0 || !allowCrossSpec) return strictDone;
-        return strictDone + allocCrossForDemand(d, need);
-      }
-
-      function allocRegularDemand(d){
-        const need = miss(d);
-        if(need <= 0) return;
-        allocQtyForDemand(d, need, !specStrict);
-      }
-
-      function calcAmazon60Target(d){
-        const total = toInt(d.demandQty);
-        if(total <= 0) return 0;
-
-        const raw60 = Math.ceil(total * 0.6);
-        if(!boxEnabled) return Math.min(total, raw60);
-
-        const box = toInt(d.box);
-        if(box <= 0) return Math.min(total, raw60);
-
-        // 60%小于箱规时，直接按整条需求处理（用户规则）
-        if(raw60 < box) return total;
-        return Math.min(total, roundUpBox(raw60, box, true));
-      }
-
-      function calcAmazon40Target(d){
-        const total = toInt(d.demandQty);
-        if(total <= 0) return 0;
-        return Math.max(0, total - calcAmazon60Target(d));
-      }
-
-      function allocAmazonStrictStep(d, plannedQty, stageKey){
-        const remain = miss(d);
-        if(remain <= 0) return;
-        const plan = Math.min(toInt(plannedQty), remain);
-        if(plan <= 0) return;
-        allocStrictForDemand(d, plan, stageKey);
-      }
-
-      function allocAmazonCrossAfterStrict(d){
-        const need = miss(d);
-        if(need <= 0) return;
-        allocCrossForDemand(d, need);
-      }
-
-      function groupAmazonBySpec(rows){
-        const groups = new Map();
-        for(const d of rows){
-          const key = orderMatchEnabled
-            ? [d.order, d.model, d.color, d.spec].join("||")
-            : [d.model, d.color, d.spec].join("||");
-          if(!groups.has(key)) groups.set(key, []);
-          groups.get(key).push(d);
-        }
-        return Array.from(groups.values());
-      }
-
-      function allocSmallPhase(smallSorted){
-        for(const d of smallSorted){ allocRegularDemand(d); }
-      }
-
-      function allocAmazonPhase(amazonSorted){
-        const groups = groupAmazonBySpec(amazonSorted);
-
-        if(amazonMode === "100"){
-          for(const g of groups){
-            for(const d of g){ allocAmazonStrictStep(d, d.demandQty, "amazon100"); }
-          }
-        }else{
-          for(const g of groups){
-            for(const d of g){ allocAmazonStrictStep(d, calcAmazon60Target(d), "amazon60"); }
-          }
-          for(const g of groups){
-            for(const d of g){ allocAmazonStrictStep(d, calcAmazon40Target(d), "amazon40"); }
-          }
-        }
-
-        // 同规格(60%+40%或100%)跑完后，才允许跨规格互补
-        if(!specStrict){
-          for(const g of groups){
-            for(const d of g){ allocAmazonCrossAfterStrict(d); }
-          }
-        }
-      }
-
-      function allocOtherPhase(otherSorted){
-        for(const d of otherSorted){ allocRegularDemand(d); }
-      }
-
-      const small  = demand.filter(d => d.platform === "小平台");
-      const amazon = demand.filter(d => d.platform === "亚马逊");
-      const other  = demand.filter(d => d.platform !== "小平台" && d.platform !== "亚马逊");
-
-      const smallSorted  = sortByPriority(small, priorityDir);
-      const amazonSorted = sortByPriority(amazon, priorityDir);
-      const otherSorted  = sortByPriority(other, priorityDir);
-
-      function runDemandCycle(){
-        if(smallFirst){
-          allocSmallPhase(smallSorted);
-          allocAmazonPhase(amazonSorted);
-          allocOtherPhase(otherSorted);
-          return;
-        }
-
-        const globalSorted = sortByPriority(demand, priorityDir);
-        if(amazonMode === "100"){
-          for(const d of globalSorted){
-            if(d.platform === "亚马逊") allocAmazonStrictStep(d, d.demandQty, "amazon100");
-            else allocRegularDemand(d);
-          }
-          if(!specStrict){
-            const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
-            const groups = groupAmazonBySpec(globalAmazon);
-            for(const g of groups){
-              for(const d of g){ allocAmazonCrossAfterStrict(d); }
-            }
-          }
-        }else{
-          for(const d of globalSorted){
-            if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon60Target(d), "amazon60");
-            else allocRegularDemand(d);
-          }
-          for(const d of globalSorted){
-            if(d.platform === "亚马逊") allocAmazonStrictStep(d, calcAmazon40Target(d), "amazon40");
-          }
-          if(!specStrict){
-            const globalAmazon = globalSorted.filter(d => d.platform === "亚马逊");
-            const groups = groupAmazonBySpec(globalAmazon);
-            for(const g of groups){
-              for(const d of g){ allocAmazonCrossAfterStrict(d); }
-            }
-          }
-        }
-      }
-
-      runDemandCycle();
-
-      const unmetFinal = [];
-      for(const d of demand){
-        const m = miss(d);
-        if(m > 0){
-          unmetFinal.push({
-            "销售采购订单号": d.order,
-            "型号": d.model, "颜色": d.color, "站点": d.site, "规格": d.spec, "平台": d.platform,
-            "原需求": d.demandQty, "已分配": got(d), "仍缺口": m, "优先级": d.__prio, "箱规": d.box
-          });
-        }
-      }
-
-      const left = supplyPool.filter(s => s.qtyLeft > 0).map(s => ({
-        "库存状态": s.status,
-        "销售采购订单号": s.order,
-        "物料编码": s.mat,
-        "销售型号": s.model,
-        "颜色": s.color,
-        "规格": s.spec,
-        "剩余数量": s.qtyLeft
-      }));
-
-      // 剩余追加进裂变输出（对账：总量不丢）
-      for(const s of supplyPool){
-        if(s.qtyLeft > 0){
-          out.push({
-            "库存状态": s.status,
-            "销售采购订单号": s.order,
-            "物料编码": s.mat,
-            "销售型号": s.model,
-            "颜色": s.color,
-            "站点": siteName,
-            "规格": s.spec,
-            "需求数量": s.qtyLeft
-          });
-        }
-      }
-
-      if(mergeOut){
-        out = consolidateOut(out);
-      }
-
-      return { out, unmet: unmetFinal, left, quality };
-    }
-
-    document.querySelectorAll(".tab").forEach(t=>{
-      t.addEventListener("click", ()=>{
-        document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-        t.classList.add("active");
-        const tab = t.dataset.tab;
-        $("panelGrid").classList.toggle("hidden", tab!=="grid");
-        $("panelExcel").classList.toggle("hidden", tab!=="excel");
-        setStatus("切换模式完成。", true);
-      });
-    });
-
-    buildGrid("gridDemand", DEMAND_COLS, 50);
-    buildGrid("gridSupply", SUPPLY_COLS, 50);
-
-    $("btnAddDemandRows").addEventListener("click", ()=>addRows("gridDemand", DEMAND_COLS, 50));
-    $("btnAddSupplyRows").addEventListener("click", ()=>addRows("gridSupply", SUPPLY_COLS, 50));
-    $("btnClearDemand").addEventListener("click", ()=>clearGrid("gridDemand"));
-    $("btnClearSupply").addEventListener("click", ()=>clearGrid("gridSupply"));
-
-    $("btnClearAll").addEventListener("click", ()=>{
-      clearGrid("gridDemand"); clearGrid("gridSupply");
-      $("fileDemand").value=""; $("fileSupply").value="";
-      $("outWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-      $("unmetWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-      $("leftWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-      $("qualityWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
-      state.outRows = [];
-      state.unmetRows = [];
-      state.leftRows = [];
-      state.qualityRows = [];
-      enableDownloads(false);
-      setStatus("已清空。", true);
-    });
-
-    $("btnLoadSample").addEventListener("click", ()=>{
-      fillGridFromObjects("gridDemand", DEMAND_COLS, [
-        {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
-        {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
-        {"销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
-        {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
-      ]);
-      fillGridFromObjects("gridSupply", SUPPLY_COLS, [
-        {"销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
-        {"销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
-        {"销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
-      ]);
-      setStatus("已载入示例：同匹配条件先分在库再分在途；订单号匹配开关可控。", true);
-    });
-
-    async function loadExcelToGrid(){
-      const fD = $("fileDemand").files[0];
-      const fS = $("fileSupply").files[0];
-      if(!fD || !fS) throw new Error("请同时上传需求Excel和在途/库存Excel。");
-
-      const demJson = await readExcelFile(fD);
-      const supJson = await readExcelFile(fS);
-
-      const dem = demJson.map(r=>{ const o={}; DEMAND_COLS.forEach(c=>o[c]=r[c]??""); return o; })
-                        .filter(r=>DEMAND_COLS.some(c=>String(r[c]??"").trim()!==""));
-
-      const sup = supJson.map(r=>{
-        const o = {};
-        SUPPLY_COLS.forEach(c=>o[c]=r[c]??"");
-        o["仓库名称"] = r["仓库名称"] ?? "";
-        o["自营销售型号"] = r["自营销售型号"] ?? "";
-        o["颜色简易版"] = r["颜色简易版"] ?? "";
-        o["充电器版本"] = r["充电器版本"] ?? "";
-        o["求和项:可用量(主单位)"] = r["求和项:可用量(主单位)"] ?? "";
-        o["规格"] = r["规格"] ?? o["规格"] ?? "";
-        o["求和项:需求数量"] = r["求和项:需求数量"] ?? o["求和项:需求数量"] ?? "";
-        o["销售型号"] = r["销售型号"] ?? o["销售型号"] ?? "";
-        o["颜色"] = r["颜色"] ?? o["颜色"] ?? "";
-        o["销售采购订单号"] = r["销售采购订单号"] ?? o["销售采购订单号"] ?? "";
-        o["物料编码"] = r["物料编码"] ?? o["物料编码"] ?? "";
-        o["库存状态"] = r["库存状态"] ?? o["库存状态"] ?? "";
-        return o;
-      }).filter(r=>Object.keys(r).some(k=>String(r[k]??"").trim()!==""));
-
-      fillGridFromObjects("gridDemand", DEMAND_COLS, dem);
-      fillGridFromObjects("gridSupply", SUPPLY_COLS, sup.map(r=>{ const o={}; SUPPLY_COLS.forEach(c=>o[c]=r[c]??""); return o; }));
-      return {dem, sup};
-    }
-
-    $("btnRun").addEventListener("click", async ()=>{
-      try{
-        enableDownloads(false);
-
-        const priorityDir = $("priorityDir").value;
-        const amazonMode = $("amazonMode").value;
-        const smallFirst = $("smallFirst").value === "1";
-        let specStrict = $("specStrict").value === "1";
-        const boxEnabled = $("boxEnabled").value === "1";
-        let orderMatchEnabled = $("orderMatchEnabled").value === "1";
-        const unassignedSite = ($("unassignedSite").value || "未分配/留库存").trim();
-        const mergeOut = $("mergeOut").value === "1";
-
-        const activeTab = document.querySelector(".tab.active").dataset.tab;
-
-        let demRows = [];
-        let supRows = [];
-
-        if(activeTab === "excel"){
-          const res = await loadExcelToGrid();
-          demRows = res.dem; supRows = res.sup;
-        }else{
-          demRows = readGridData("gridDemand", DEMAND_COLS);
-          supRows = readGridData("gridSupply", SUPPLY_COLS);
-        }
-
-        if(demRows.length===0) throw new Error("需求明细为空。");
-        if(supRows.length===0) throw new Error("在途/库存明细为空。");
-
-        orderMatchEnabled = await reviewOrderMatchSwitch(demRows, supRows, orderMatchEnabled);
-        $("orderMatchEnabled").value = orderMatchEnabled ? "1" : "0";
-
-        specStrict = await reviewSpecStrictSwitch(specStrict);
-        $("specStrict").value = specStrict ? "1" : "0";
-
-        const {out, unmet, left, quality} = runAllocation(demRows, supRows, {
-          priorityDir, amazonMode, smallFirst, unassignedSite, mergeOut, specStrict, boxEnabled, orderMatchEnabled
-        });
-
-        state.outRows = out;
-        state.unmetRows = unmet;
-        state.leftRows = left;
-        state.qualityRows = quality;
-
-        renderTable("outWrap", out.length? out : [{"提示":"没有产生任何分配（请检查：型号/颜色/规格是否能匹配到供给；若开启订单号匹配，需求侧与供给侧订单号需一致）。"}]);
-        renderTable("unmetWrap", unmet.length? unmet : [{"提示":"没有未满足需求"}]);
-        renderTable("leftWrap", left.length? left : [{"提示":"没有剩余"}]);
-        renderTable("qualityWrap", quality.length ? quality : [{"提示":"无质量告警"}]);
-
-        enableDownloads(true);
-
-        const outSum = out.reduce((a,r)=>a + toInt(r["需求数量"]), 0);
-        const leftSum = left.reduce((a,r)=>a + toInt(r["剩余数量"]), 0);
-        setStatus(`完成：裂变输出${out.length}行(合计${outSum})；未满足${unmet.length}行；剩余${left.length}行(合计${leftSum})；质量提示${quality.length}条。`, true);
-
-      }catch(e){
-        console.error(e);
-        setStatus("失败：" + (e?.message || String(e)), false);
-        $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态支持任意文本（整列留空会忽略该列，部分留空会跳过空值行）；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
-        $("unmetWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
-        $("leftWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
-        $("qualityWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
-        enableDownloads(false);
-      }
-    });
-
-    $("btnDownloadTSV").addEventListener("click", ()=>{
-      if(!state.outRows.length) return;
-      const tsv = rowsToTSV(state.outRows, OUT_COLS);
-      downloadText(`在途分货裂变_v${APP_VERSION}_裂变输出.tsv`, tsv, "text/tab-separated-values;charset=utf-8");
-    });
-
-    $("btnDownloadXLSX").addEventListener("click", ()=>{
-      if(!state.outRows.length) return;
-      if(!window.XLSX){
-        setStatus("XLSX库未加载：无法导出XLSX（可用TSV下载）。", false);
-        return;
-      }
-      const outRowsForXlsx = state.outRows.map(r => ({ ...r, "映射": mapSiteForExport(r["站点"]) }));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(outRowsForXlsx), "裂变输出");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.unmetRows), "未满足需求");
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.leftRows), "在途库存剩余");
-      XLSX.utils.book_append_sheet(
-        wb,
-        XLSX.utils.json_to_sheet(state.qualityRows.length ? state.qualityRows : [{"提示":"无质量告警"}]),
-        "数据质量报告"
-      );
-      applyWorkbookFont(wb, "微软雅黑", 10);
-
-      const buf = XLSX.write(wb, { bookType:"xlsx", type:"array", cellStyles:true });
-      const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `在途分货裂变_v${APP_VERSION}_结果.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-  </script>
-  </body>
-  </html>
+  }
+  renderTable(rows);
+}
+
+/** ==============
+ * 导出
+ * ============== */
+function exportXlsx(results){
+  const aoa = [["行号","MSKU","标题","国家","SKU","清洗键","命中来源","审计"]];
+  for(const r of results){
+    aoa.push([r.rownum, r.msku, r.title, r.country, r.sku, r.clean_key, r.source, r.audit]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Result");
+  const out = XLSX.write(wb, {bookType:"xlsx", type:"array"});
+  downloadBlob(new Blob([out], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}), `Result_v${RULES.version||1}.xlsx`);
+}
+function exportTsv(results){
+  const header = ["行号","MSKU","标题","国家","SKU","清洗键","命中来源","审计"];
+  const lines = [header.join("\t")];
+  for(const r of results){
+    const row = [r.rownum, r.msku, r.title, r.country, r.sku, r.clean_key, r.source, r.audit]
+      .map(v=>String(v??"").replaceAll("\t"," ").replaceAll("\n"," "));
+    lines.push(row.join("\t"));
+  }
+  downloadBlob(new Blob([lines.join("\n")], {type:"text/tab-separated-values;charset=utf-8"}), `Result_v${RULES.version||1}.tsv`);
+}
+
+/** ==============
+ * 事件：初始化
+ * ============== */
+function updateImportPills(){
+  el("stdPill").textContent = STD ? `标准库：已导入（${STD.skuCount}）` : "标准库：未导入";
+  el("listPill").textContent = LIST ? `Listing：已导入（${LIST.rows.length}）` : "Listing：未导入";
+  el("kSkuCount").textContent = STD ? STD.skuCount : 0;
+  el("kRowCount").textContent = LIST ? LIST.rows.length : 0;
+  el("btnRun").disabled = !(STD && LIST);
+
+  setLamp(el("stdLamp"), el("stdText"), STD ? "ok" : "wait", STD ? "标准库已导入" : "标准库未导入");
+  setLamp(el("listLamp"), el("listText"), LIST ? "ok" : "wait", LIST ? "Listing已导入" : "Listing未导入");
+}
+refreshRulesUI();
+updateImportPills();
+setLamp(el("rulesLamp"), el("rulesText"), "wait", "规则未校验");
+setLamp(el("runLamp"), el("runText"), "wait", "未运行");
+
+el("qSearch").addEventListener("input", applyView);
+el("qFilter").addEventListener("change", applyView);
+
+// tab
+el("tabBasic").addEventListener("click", ()=>{
+  el("tabBasic").classList.add("active");
+  el("tabAdvanced").classList.remove("active");
+  el("panelBasic").style.display = "";
+  el("panelAdvanced").style.display = "none";
+});
+el("tabAdvanced").addEventListener("click", ()=>{
+  el("tabAdvanced").classList.add("active");
+  el("tabBasic").classList.remove("active");
+  el("panelAdvanced").style.display = "";
+  el("panelBasic").style.display = "none";
+  el("rulesBox").value = JSON.stringify(RULES, null, 2);
+});
+
+// import files
+el("stdFile").addEventListener("change", async (ev)=>{
+  const f = ev.target.files?.[0];
+  if(!f) return;
+  try{
+    const wb = await readWorkbook(f);
+    STD = buildStandardIndex(wb, RULES);
+    updateImportPills();
+    setLamp(el("runLamp"), el("runText"), "wait", "标准库已就绪");
+  }catch(e){
+    alert("导入标准库失败：" + (e?.message||String(e)));
+    console.error(e);
+  }finally{
+    ev.target.value = "";
+  }
+});
+el("listFile").addEventListener("change", async (ev)=>{
+  const f = ev.target.files?.[0];
+  if(!f) return;
+  try{
+    const wb = await readWorkbook(f);
+    LIST = parseListing(wb);
+    updateImportPills();
+    setLamp(el("runLamp"), el("runText"), "wait", "Listing已就绪");
+  }catch
