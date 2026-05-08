@@ -3,67 +3,98 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>在途分货裂变 5.1</title>
+    <title>在途分货裂变 5.7</title>
 
     <style>
       :root{
-        --bg:#F5F6F7; --card:#FFFFFF; --text:#1F2329; --muted:#646A73; --line:#E5E6EB;
-        --blue:#3370FF; --blue2:#2B5CFF; --shadow:0 8px 24px rgba(31,35,41,.06);
-        --radius:12px; --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI","PingFang SC","Microsoft YaHei", Arial;
+        --bg:#F4F6FA; --bg-soft:#EEF1F7; --card:#FFFFFF;
+        --text:#1F2329; --muted:#646A73; --muted-2:#8A8F99;
+        --line:#E8EAEF; --line-soft:#F1F3F7;
+        --blue:#3370FF; --blue2:#2456E0; --blue-soft:#EBF1FF;
+        --green:#067647; --red:#B42318; --red-soft:#FFF1F1;
+        --shadow:0 1px 2px rgba(31,35,41,.04), 0 4px 16px rgba(31,35,41,.05);
+        --shadow-lg:0 8px 28px rgba(31,35,41,.10);
+        --radius:14px; --radius-sm:10px;
+        --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI","PingFang SC","Microsoft YaHei", Arial;
       }
       *{box-sizing:border-box}
-      body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font)}
-      .topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-      .brand{display:flex;gap:10px;align-items:center;font-weight:700}
-      .dot{width:10px;height:10px;border-radius:50%;background:var(--blue)}
-      .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#f0f4ff;color:var(--blue);border:1px solid rgba(51,112,255,.2);font-size:12px}
-      .actions{display:flex;gap:10px;align-items:center}
-      .container{max-width:1280px;margin:18px auto;padding:0 18px}
-      .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+      html,body{height:100%}
+      body{margin:0;background:linear-gradient(180deg,#F6F8FC 0%,#EEF1F7 100%);background-attachment:fixed;color:var(--text);font-family:var(--font);font-feature-settings:"tnum" 1;-webkit-font-smoothing:antialiased}
+      h3{font-size:15px;font-weight:600;letter-spacing:.2px;margin:0}
+
+      .topbar{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(255,255,255,.86);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+      .brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:15px;letter-spacing:.3px}
+      .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#3370FF,#5B8EFF);box-shadow:0 0 0 4px rgba(51,112,255,.12)}
+      .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--blue-soft);color:var(--blue);border:1px solid rgba(51,112,255,.18);font-size:12px;font-weight:600;letter-spacing:.2px}
+      .actions{display:flex;gap:8px;align-items:center}
+
+      .container{max-width:1320px;margin:20px auto 48px;padding:0 22px}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
       .grid > *{min-width:0}
-      .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;min-width:0}
+      .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;min-width:0}
+
       .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
       .field{display:flex;gap:8px;align-items:center}
-      label{font-size:12px;color:var(--muted)}
-      input[type="text"], select{border:1px solid var(--line);border-radius:10px;padding:10px 10px;font-size:13px;outline:none;background:#fff;transition:.15s}
-      input[type="text"]:focus, select:focus{border-color:rgba(51,112,255,.55);box-shadow:0 0 0 3px rgba(51,112,255,.12)}
-      .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:9px 12px;border-radius:10px;font-size:13px;cursor:pointer;transition:.15s;display:inline-flex;gap:8px;align-items:center}
-      .btn:hover{border-color:#d0d3da;background:#fafafa}
-      .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
-      .btn.primary:hover{background:var(--blue2);border-color:var(--blue2)}
-      .btn.danger{border-color:#ffd1d1;background:#fff5f5}
-      .sub{font-size:12px;color:var(--muted);line-height:1.5;margin-top:6px}
-      .ok{color:#067647} .warn{color:#B42318}
-      .hr{height:1px;background:var(--line);margin:12px 0}
-      .tabs{display:flex;gap:8px;margin-bottom:10px}
-      .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;cursor:pointer}
-      .tab.active{border-color:rgba(51,112,255,.5);box-shadow:0 0 0 3px rgba(51,112,255,.10)}
+      label{font-size:12px;color:var(--muted);font-weight:500}
+
+      input[type="text"], select{border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;outline:none;background:#fff;color:var(--text);transition:border-color .18s, box-shadow .18s}
+      input[type="text"]:hover, select:hover{border-color:#C8CDD7}
+      input[type="text"]:focus, select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(51,112,255,.14)}
+      select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23646A73' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+      input[type="file"]{font-size:13px;color:var(--muted)}
+
+      .btn{border:1px solid var(--line);background:#fff;color:var(--text);padding:8px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;gap:6px;align-items:center;line-height:1.2;transition:all .18s ease}
+      .btn:hover{border-color:#C8CDD7;background:#FAFBFC;transform:translateY(-1px);box-shadow:0 2px 6px rgba(31,35,41,.06)}
+      .btn:active{transform:translateY(0);box-shadow:none}
+      .btn.primary{background:linear-gradient(135deg,#3370FF 0%,#2456E0 100%);border-color:transparent;color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(51,112,255,.28)}
+      .btn.primary:hover{background:linear-gradient(135deg,#2B5CFF 0%,#1E4ACC 100%);box-shadow:0 4px 14px rgba(51,112,255,.36)}
+      .btn.danger{border-color:#FCC4C4;background:var(--red-soft);color:var(--red)}
+      .btn.danger:hover{border-color:#F69191;background:#FFE5E5}
+      .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+
+      .sub{font-size:12.5px;color:var(--muted);line-height:1.65;margin-top:6px}
+      .ok{color:var(--green)} .warn{color:var(--red)}
+      .hr{height:1px;background:var(--line);margin:14px 0}
+
+      .tabs{display:flex;gap:6px;margin-bottom:12px;padding:4px;background:var(--bg-soft);border-radius:var(--radius-sm);width:fit-content}
+      .tab{padding:7px 14px;border-radius:8px;border:1px solid transparent;background:transparent;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .18s}
+      .tab:hover{color:var(--text)}
+      .tab.active{color:var(--blue);background:#fff;border-color:var(--line);box-shadow:0 1px 2px rgba(31,35,41,.06)}
       .hidden{display:none !important}
-      .sheet-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
-      .sheet-meta{display:flex;gap:8px;flex-wrap:wrap}
-      .meta-pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:#f7f8fb;border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap}
-      .sheet-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;min-width:0}
+
+      .sheet-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+      .sheet-meta{display:flex;gap:6px;flex-wrap:wrap}
+      .meta-pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;background:var(--line-soft);border:1px solid var(--line);font-size:11.5px;color:var(--muted);white-space:nowrap;font-weight:500}
+
+      .sheet-wrap{border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:#fff;min-width:0}
       .sheet-scroll{max-height:340px;overflow:auto;width:100%}
+      .sheet-scroll::-webkit-scrollbar{width:10px;height:10px}
+      .sheet-scroll::-webkit-scrollbar-thumb{background:#D6DAE0;border-radius:6px;border:2px solid #fff}
+      .sheet-scroll::-webkit-scrollbar-thumb:hover{background:#BFC4CC}
+      .sheet-scroll::-webkit-scrollbar-track{background:transparent}
       table.sheet{width:100%;border-collapse:separate;border-spacing:0}
-      table.sheet thead th{position:sticky;top:0;z-index:2;background:#FAFAFA;color:var(--muted);font-weight:600;font-size:12px;border-bottom:1px solid var(--line);padding:10px 10px;text-align:left;white-space:nowrap}
-      table.sheet td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;vertical-align:top;background:#fff}
+      table.sheet thead th{position:sticky;top:0;z-index:2;background:#F7F8FB;color:var(--muted);font-weight:600;font-size:12px;border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;white-space:nowrap;letter-spacing:.3px}
+      table.sheet td{border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);padding:0;vertical-align:top;background:#fff;transition:background .15s}
       table.sheet tr td:last-child{border-right:none}
       table.sheet tbody tr:last-child td{border-bottom:none}
-      .cell{padding:9px 10px;min-height:18px;font-size:13px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      .cell:focus{box-shadow: inset 0 0 0 2px rgba(51,112,255,.55);background:#F7F9FF;overflow:auto;text-overflow:clip}
-      .log-card{position:relative;overflow:visible}
-      .log-preview{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-      .log-hint{font-size:12px;color:var(--muted);white-space:nowrap}
-      .log-details{position:absolute;left:14px;right:14px;top:calc(100% - 6px);padding:14px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:360px;overflow:auto;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s ease, transform .18s ease;z-index:20}
-      .log-card:hover .log-details,
-      .log-card:focus-within .log-details{opacity:1;transform:none;pointer-events:auto}
-      .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px}
-      .modal-panel{width:min(580px,100%);background:#fff;border:1px solid #e8eaf0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24);padding:16px 16px 14px}
-      .modal-kicker{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef3ff;color:#2b5cff;border:1px solid rgba(43,92,255,.2)}
-      .modal-title{margin:10px 0 6px 0;font-size:19px;line-height:1.3}
-      .modal-main{font-size:14px;line-height:1.7;color:#1f2329}
-      .modal-sub{margin-top:8px;padding:10px 12px;border-radius:10px;background:#f7f8fb;border:1px solid #eceff5;color:#495265;font-size:13px;line-height:1.6}
-      .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+      table.sheet tbody tr:hover td{background:#FAFBFD}
+      .cell{padding:9px 12px;min-height:18px;font-size:13px;outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+      .cell:focus{box-shadow: inset 0 0 0 2px rgba(51,112,255,.55);background:#F4F8FF;overflow:auto;text-overflow:clip}
+
+      .modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.46);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+      .modal-panel{width:min(580px,100%);background:#fff;border:1px solid #E8EAF0;border-radius:16px;box-shadow:0 24px 70px rgba(15,23,42,.24);padding:18px 18px 16px;animation:modalIn .18s ease-out}
+      @keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+      .modal-kicker{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:var(--blue-soft);color:var(--blue2);border:1px solid rgba(43,92,255,.2);letter-spacing:.2px}
+      .modal-title{margin:10px 0 6px 0;font-size:19px;line-height:1.35;font-weight:600}
+      .modal-main{font-size:14px;line-height:1.7;color:var(--text)}
+      .modal-sub{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--line-soft);border:1px solid var(--line);color:#495265;font-size:13px;line-height:1.6}
+      .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+
+      @media (max-width: 880px){
+        .grid{grid-template-columns:1fr}
+        .container{padding:0 14px;margin:14px auto 32px}
+        .topbar{padding:0 16px}
+      }
     </style>
 
     <!-- 可选：用于导出XLSX（未引入也能用TSV下载） -->
@@ -72,7 +103,7 @@
 
   <body>
     <div class="topbar">
-      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v5.6</span></div>
+      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v5.7</span></div>
       <div class="actions">
         <button class="btn" id="btnLoadSample">载入示例</button>
         <button class="btn danger" id="btnClearAll">清空全部</button>
@@ -193,7 +224,7 @@
               </div>
             </div>
             <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridSupply"></table></div></div>
-            <div class="sub">列固定：库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
+            <div class="sub">列固定：通用辅助列 / 库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量。通用辅助列仅作文本附带，不参与匹配，会随行带到“裂变输出/剩余”里。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
             </div>
           </div>
         </div>
@@ -222,7 +253,7 @@
             <button class="btn primary" id="btnDownloadXLSX" disabled>下载XLSX</button>
           </div>
         </div>
-        <div class="sub">输出列：库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
+        <div class="sub">输出列：通用辅助列 / 库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
         <div class="hr"></div>
         <div id="outWrap" class="sub">还没有生成结果。</div>
       </div>
@@ -248,37 +279,6 @@
         <div id="qualityWrap" class="sub">还没有生成结果。</div>
       </div>
 
-      <div class="card log-card" style="margin-top:14px" tabindex="0">
-        <div class="log-preview">
-          <div>
-            <h3 style="margin:0">更新日志</h3>
-            <div class="sub"><strong>v5.6（2026-03-13）</strong>：统一全部文本匹配口径为大小写不敏感；型号、订单号、颜色、平台、库存状态、规格等列均按归一化键参与判断，尽量保留原始显示值。</div>
-          </div>
-          <div class="log-hint">悬浮展开</div>
-        </div>
-        <div class="log-details">
-          <div class="sub">
-            <div><strong>v5.6（2026-03-13）</strong>：统一全部文本匹配口径为大小写不敏感；型号、订单号、颜色、平台、库存状态、规格等列均按归一化键参与判断，尽量保留原始显示值。</div>
-            <div><strong>v5.5（2026-03-04）</strong>：修正订单号匹配口径：开启后在库/在途/其他状态统一按订单号匹配，不再允许在库跨订单分配。</div>
-            <div><strong>v5.4（2026-03-04）</strong>：调整库存状态规则：仅当库存状态列同时存在“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”补缺；来源规格自身仍有缺口时不得外借，并保留“美规优先补日规”。</div>
-            <div><strong>v5.3（2026-03-04）</strong>：重做库存状态规则：仅当库存状态列同时存在“在库/在途”时才区分状态；同规格原始存在在途时禁止异规格改制，且来源规格自身仍有缺口时不得外借。</div>
-            <div><strong>v5.2（2026-03-04）</strong>：库存状态提升为最外层分配阶段，按“在库→在途→其他状态”依次完整执行；库存状态整列留空时回退原规则。</div>
-            <div><strong>v5.1（2026-02-17）</strong>：在库可跨订单优先分配；修正表格溢出；更新日志改为悬浮展开且页面不跳动。</div>
-            <div><strong>v5.0（2026-02-17）</strong>：优化粘贴体验、折叠更新日志，明确“在库优先”，并精简生成前审核弹窗文案。</div>
-            <div><strong>v4.9（2026-02-17）</strong>：放开库存状态限制，不再限定“在库/在途”；支持任意库存状态文本参与分配，并保留“在库→在途→其他状态”的消耗顺序。</div>
-            <div><strong>v4.8（2026-02-17）</strong>：按业务口径微调跨规格规则：仅保留“美规结余优先给日规缺口”，不再额外保护日规库存（美规无结余时按正常优先级分配）。</div>
-            <div><strong>v4.7（2026-02-17）</strong>：跨规格互补新增全局保护：同型号同颜色（及同订单号）下，只要仍有日规缺口，非日规不会先占用美规结余，优先留给日规补缺。</div>
-            <div><strong>v4.6（2026-02-17）</strong>：修正亚马逊6/4分配逻辑：同型号+颜色+规格先跑完同规格（60%后40%）再跨规格互补；60%按箱规规则处理、40%不按箱规；小平台不再做箱规补齐。</div>
-            <div><strong>v4.5（2026-02-06）</strong>：重做生成前防呆弹窗样式与文案，替换原生alert/confirm为统一审核弹窗。</div>
-            <div><strong>v4.4（2026-02-06）</strong>：修复跨规格互补时日规优先级问题，先保障同型号同颜色（日规）缺口，再允许其他规格占用日规库存。</div>
-            <div><strong>v4.3（2026-02-06）</strong>：清理更新日志，移除字体需求相关记录。</div>
-            <div><strong>v4.2（2026-02-06）</strong>：优化导出参数兼容性。</div>
-            <div><strong>v4.1（2026-02-06）</strong>：新增生成前二次审核（订单号匹配、同规格裂变），并完善自动开关提醒逻辑。</div>
-            <div><strong>v4.0（2026-02-06）</strong>：库存状态移至最左列；库存状态整列留空可忽略、部分留空自动跳过；新增数据质量报告；裂变输出导出新增“映射”列。</div>
-            <div><strong>v3.0</strong>：基础分货裂变流程与导入导出能力。</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div id="reviewModalMask" class="modal-mask hidden" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
@@ -295,10 +295,10 @@
     </div>
 
   <script>
-    const APP_VERSION = "5.6";
+    const APP_VERSION = "5.7";
     const DEMAND_COLS = ["销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
-    const SUPPLY_COLS = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
-    const OUT_COLS    = ["库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
+    const SUPPLY_COLS = ["通用辅助列","库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
+    const OUT_COLS    = ["通用辅助列","库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
 
     const $ = (id)=>document.getElementById(id);
     const state = { outRows: [], unmetRows: [], leftRows: [], qualityRows: [] };
@@ -782,6 +782,7 @@
     function makeSupplyPool(supplyRows){
       return supplyRows.map((r, idx)=>({
         __idx: idx,
+        aux:    String(r["通用辅助列"] ?? "").trim(),
         order:  (r["销售采购订单号"] ?? r["仓库名称"] ?? "").trim(),
         orderKey: normText(r["销售采购订单号"] ?? r["仓库名称"] ?? ""),
         mat:    (r["物料编码"] ?? "").trim(),
@@ -793,7 +794,7 @@
         spec:   String(r["规格"] ?? r["充电器版本"] ?? "").trim(),
         specKey: normSpecKey(r["规格"] ?? r["充电器版本"] ?? ""),
         qtyLeft: toInt(r["求和项:需求数量"] ?? r["求和项:可用量(主单位)"] ?? 0),
-      })).filter(x => x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
+      })).filter(x => x.aux || x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
     }
 
     function matchStatusPhase(status, statusPhase){
@@ -819,7 +820,7 @@
           const take = Math.min(need, s.qtyLeft);
           s.qtyLeft -= take;
           need -= take;
-          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
         }
         return allocs;
       }
@@ -835,7 +836,7 @@
           s.qtyLeft -= take;
           need -= take;
 
-          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
         }
         return allocs;
       }
@@ -851,7 +852,7 @@
           s.qtyLeft -= take;
           need -= take;
 
-          allocs.push({ order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
         }
       }
       passByStatus((status)=>status === "在库");
@@ -863,7 +864,7 @@
     function consolidateOut(rows){
       const m = new Map();
       for(const r of rows){
-        const k = [r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
+        const k = [r["通用辅助列"], r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
         const cur = m.get(k) || { ...r, "需求数量": 0 };
         cur["需求数量"] = toInt(cur["需求数量"]) + toInt(r["需求数量"]);
         m.set(k, cur);
@@ -938,6 +939,7 @@
 
       function addOut(site, alloc){
         out.push({
+          "通用辅助列": alloc.aux ?? "",
           "库存状态": alloc.status,
           "销售采购订单号": alloc.order,
           "物料编码": alloc.mat,
@@ -1217,6 +1219,7 @@
       }
 
       const left = supplyPool.filter(s => s.qtyLeft > 0).map(s => ({
+        "通用辅助列": s.aux,
         "库存状态": s.status,
         "销售采购订单号": s.order,
         "物料编码": s.mat,
@@ -1230,6 +1233,7 @@
       for(const s of supplyPool){
         if(s.qtyLeft > 0){
           out.push({
+            "通用辅助列": s.aux,
             "库存状态": s.status,
             "销售采购订单号": s.order,
             "物料编码": s.mat,
@@ -1291,9 +1295,9 @@
         {"销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
       ]);
       fillGridFromObjects("gridSupply", SUPPLY_COLS, [
-        {"销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
-        {"销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
-        {"销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
+        {"通用辅助列":"备注A","销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
+        {"通用辅助列":"备注B","销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
+        {"通用辅助列":"","销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
       ]);
       setStatus("已载入示例：同匹配条件先分在库再分在途；订单号匹配开关可控。", true);
     });
@@ -1324,6 +1328,7 @@
         o["销售采购订单号"] = r["销售采购订单号"] ?? o["销售采购订单号"] ?? "";
         o["物料编码"] = r["物料编码"] ?? o["物料编码"] ?? "";
         o["库存状态"] = r["库存状态"] ?? o["库存状态"] ?? "";
+        o["通用辅助列"] = r["通用辅助列"] ?? o["通用辅助列"] ?? "";
         return o;
       }).filter(r=>Object.keys(r).some(k=>String(r[k]??"").trim()!==""));
 
