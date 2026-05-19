@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>在途分货裂变 5.9</title>
+    <title>在途分货裂变 6.0</title>
 
     <style>
       :root{
@@ -103,7 +103,7 @@
 
   <body>
     <div class="topbar">
-      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v5.9</span></div>
+      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v6.0</span></div>
       <div class="actions">
         <button class="btn" id="btnLoadSample">载入示例</button>
         <button class="btn danger" id="btnClearAll">清空全部</button>
@@ -206,7 +206,7 @@
               </div>
             </div>
               <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridDemand"></table></div></div>
-              <div class="sub">列固定：通用辅助列 / 通用辅助列2 / 销售采购订单号 / 型号 / 颜色 / 站点（平台） / SI数量 / 品线 / 需求规格 / 平台 / 箱规信息 / 优先级。通用辅助列与通用辅助列2均仅作文本附带，不参与匹配，会随行带到“未满足需求”里。</div>
+              <div class="sub">列固定：通用辅助列 / 通用辅助列2 / 通用辅助列3 / 销售采购订单号 / 型号 / 颜色 / 站点（平台） / SI数量 / 品线 / 需求规格 / 平台 / 箱规信息 / 优先级。三个通用辅助列均仅作文本附带，不参与匹配，会随行带到“未满足需求”里。</div>
             </div>
 
           <div class="card">
@@ -224,7 +224,7 @@
               </div>
             </div>
             <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridSupply"></table></div></div>
-            <div class="sub">列固定：通用辅助列 / 库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量。通用辅助列仅作文本附带，不参与匹配，会随行带到“裂变输出/剩余”里。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
+            <div class="sub">列固定：通用辅助列 / 通用辅助列2 / 库存状态(可填任意文本) / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 规格 / 求和项:需求数量。两个通用辅助列均仅作文本附带，不参与匹配，会随行带到“裂变输出/剩余”里。仅当库存状态列同时出现“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”分配。</div>
             </div>
           </div>
         </div>
@@ -253,7 +253,7 @@
             <button class="btn primary" id="btnDownloadXLSX" disabled>下载XLSX</button>
           </div>
         </div>
-        <div class="sub">输出列：通用辅助列 / 库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
+        <div class="sub">输出列：通用辅助列 / 通用辅助列2 / 库存状态 / 销售采购订单号 / 物料编码 / 销售型号 / 颜色 / 站点 / 规格 / 需求数量</div>
         <div class="hr"></div>
         <div id="outWrap" class="sub">还没有生成结果。</div>
       </div>
@@ -295,10 +295,10 @@
     </div>
 
   <script>
-    const APP_VERSION = "5.9";
-    const DEMAND_COLS = ["通用辅助列","通用辅助列2","销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
-    const SUPPLY_COLS = ["通用辅助列","库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
-    const OUT_COLS    = ["通用辅助列","库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
+    const APP_VERSION = "6.0";
+    const DEMAND_COLS = ["通用辅助列","通用辅助列2","通用辅助列3","销售采购订单号","型号","颜色","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
+    const SUPPLY_COLS = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","规格","求和项:需求数量"];
+    const OUT_COLS    = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","站点","规格","需求数量"];
 
     const $ = (id)=>document.getElementById(id);
     const state = { outRows: [], unmetRows: [], leftRows: [], qualityRows: [] };
@@ -783,6 +783,7 @@
       return supplyRows.map((r, idx)=>({
         __idx: idx,
         aux:    String(r["通用辅助列"] ?? "").trim(),
+        aux2:   String(r["通用辅助列2"] ?? "").trim(),
         order:  (r["销售采购订单号"] ?? r["仓库名称"] ?? "").trim(),
         orderKey: normText(r["销售采购订单号"] ?? r["仓库名称"] ?? ""),
         mat:    (r["物料编码"] ?? "").trim(),
@@ -794,7 +795,7 @@
         spec:   String(r["规格"] ?? r["充电器版本"] ?? "").trim(),
         specKey: normSpecKey(r["规格"] ?? r["充电器版本"] ?? ""),
         qtyLeft: toInt(r["求和项:需求数量"] ?? r["求和项:可用量(主单位)"] ?? 0),
-      })).filter(x => x.aux || x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
+      })).filter(x => x.aux || x.aux2 || x.order || x.mat || x.status || x.model || x.color || x.spec || x.qtyLeft);
     }
 
     function matchStatusPhase(status, statusPhase){
@@ -820,7 +821,7 @@
           const take = Math.min(need, s.qtyLeft);
           s.qtyLeft -= take;
           need -= take;
-          allocs.push({ aux:s.aux, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
         }
         return allocs;
       }
@@ -836,7 +837,7 @@
           s.qtyLeft -= take;
           need -= take;
 
-          allocs.push({ aux:s.aux, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
         }
         return allocs;
       }
@@ -852,7 +853,7 @@
           s.qtyLeft -= take;
           need -= take;
 
-          allocs.push({ aux:s.aux, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, spec:s.spec, qty:take });
         }
       }
       passByStatus((status)=>status === "在库");
@@ -864,7 +865,7 @@
     function consolidateOut(rows){
       const m = new Map();
       for(const r of rows){
-        const k = [r["通用辅助列"], r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
+        const k = [r["通用辅助列"], r["通用辅助列2"], r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["站点"], r["规格"]].join("||");
         const cur = m.get(k) || { ...r, "需求数量": 0 };
         cur["需求数量"] = toInt(cur["需求数量"]) + toInt(r["需求数量"]);
         m.set(k, cur);
@@ -905,6 +906,7 @@
           __idx: idx,
           aux: String(r["通用辅助列"] ?? "").trim(),
           aux2: String(r["通用辅助列2"] ?? "").trim(),
+          aux3: String(r["通用辅助列3"] ?? "").trim(),
           order: (r["销售采购订单号"] ?? "").trim(),
           orderKey: normText(r["销售采购订单号"] ?? ""),
           model: normKey(r["型号"]),
@@ -942,6 +944,7 @@
       function addOut(site, alloc){
         out.push({
           "通用辅助列": alloc.aux ?? "",
+          "通用辅助列2": alloc.aux2 ?? "",
           "库存状态": alloc.status,
           "销售采购订单号": alloc.order,
           "物料编码": alloc.mat,
@@ -1215,6 +1218,7 @@
           unmetFinal.push({
             "通用辅助列": d.aux,
             "通用辅助列2": d.aux2,
+            "通用辅助列3": d.aux3,
             "销售采购订单号": d.order,
             "型号": d.model, "颜色": d.color, "站点": d.site, "规格": d.spec, "平台": d.platform,
             "原需求": d.demandQty, "已分配": got(d), "仍缺口": m, "优先级": d.__prio, "箱规": d.box
@@ -1224,6 +1228,7 @@
 
       const left = supplyPool.filter(s => s.qtyLeft > 0).map(s => ({
         "通用辅助列": s.aux,
+        "通用辅助列2": s.aux2,
         "库存状态": s.status,
         "销售采购订单号": s.order,
         "物料编码": s.mat,
@@ -1238,6 +1243,7 @@
         if(s.qtyLeft > 0){
           out.push({
             "通用辅助列": s.aux,
+            "通用辅助列2": s.aux2,
             "库存状态": s.status,
             "销售采购订单号": s.order,
             "物料编码": s.mat,
@@ -1293,15 +1299,15 @@
 
     $("btnLoadSample").addEventListener("click", ()=>{
       fillGridFromObjects("gridDemand", DEMAND_COLS, [
-        {"通用辅助列":"备注X","通用辅助列2":"备注M","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
-        {"通用辅助列":"","通用辅助列2":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
-        {"通用辅助列":"备注Y","通用辅助列2":"备注N","销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
-        {"通用辅助列":"","通用辅助列2":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
+        {"通用辅助列":"备注X","通用辅助列2":"备注M","通用辅助列3":"备注P","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
+        {"通用辅助列":"","通用辅助列2":"","通用辅助列3":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
+        {"通用辅助列":"备注Y","通用辅助列2":"备注N","通用辅助列3":"备注Q","销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
+        {"通用辅助列":"","通用辅助列2":"","通用辅助列3":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
       ]);
       fillGridFromObjects("gridSupply", SUPPLY_COLS, [
-        {"通用辅助列":"备注A","销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
-        {"通用辅助列":"备注B","销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
-        {"通用辅助列":"","销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
+        {"通用辅助列":"备注A","通用辅助列2":"备注α","销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","规格":"欧","求和项:需求数量":"40"},
+        {"通用辅助列":"备注B","通用辅助列2":"备注β","销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"美","求和项:需求数量":"20"},
+        {"通用辅助列":"","通用辅助列2":"","销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","规格":"日","求和项:需求数量":"8"}
       ]);
       setStatus("已载入示例：同匹配条件先分在库再分在途；订单号匹配开关可控。", true);
     });
@@ -1333,6 +1339,7 @@
         o["物料编码"] = r["物料编码"] ?? o["物料编码"] ?? "";
         o["库存状态"] = r["库存状态"] ?? o["库存状态"] ?? "";
         o["通用辅助列"] = r["通用辅助列"] ?? o["通用辅助列"] ?? "";
+        o["通用辅助列2"] = r["通用辅助列2"] ?? o["通用辅助列2"] ?? "";
         return o;
       }).filter(r=>Object.keys(r).some(k=>String(r[k]??"").trim()!==""));
 
