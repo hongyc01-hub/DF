@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>在途分货裂变 6.1</title>
+    <title>在途分货裂变 6.2</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -491,11 +491,73 @@
         .help-section dt:first-child{margin-top:0}
       }
 
+      /* ===== 顶层 Sheet 页签（类似 Excel Sheet 切换） ===== */
+      .sheet-tabs{
+        display:flex;
+        gap:2px;
+        align-items:flex-end;
+        margin-bottom:20px;
+        border-bottom:2px solid var(--border);
+      }
+      .sheet-tab{
+        appearance:none;
+        -webkit-appearance:none;
+        border:1px solid var(--border);
+        border-bottom:none;
+        background:var(--bg-secondary);
+        color:var(--text-secondary);
+        font-family:var(--font-sans);
+        font-size:14px;
+        font-weight:600;
+        padding:10px 22px;
+        border-radius:var(--radius-md) var(--radius-md) 0 0;
+        cursor:pointer;
+        position:relative;
+        top:2px;
+        transition:background-color 150ms ease-out, color 150ms ease-out;
+      }
+      .sheet-tab:hover{color:var(--text-primary)}
+      .sheet-tab.active{
+        background:var(--bg-elevated);
+        color:var(--accent);
+        border-bottom:2px solid var(--bg-elevated);
+      }
+
+      /* ===== 供需对比结果面板（与裂变结果面板分类隔离） ===== */
+      .compare-panel{min-width:0}
+      .compare-input-grid{
+        display:grid;
+        grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+        gap:16px;
+      }
+      .compare-input-grid > *{min-width:0}
+      .compare-input-grid .sheet-scroll{max-height:480px}
+
+      /* ===== 更新日志卡片（悬浮展开，沿用历史展示方式） ===== */
+      .log-card{position:relative;overflow:visible}
+      .log-preview{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+      .log-hint{font-size:12px;color:var(--text-secondary);white-space:nowrap}
+      .log-details{
+        position:absolute;left:16px;right:16px;top:calc(100% - 6px);
+        padding:16px;background:var(--bg-elevated);
+        border:1px solid var(--border);border-radius:var(--radius-md);
+        box-shadow:var(--shadow-lg);max-height:380px;overflow:auto;
+        opacity:0;transform:translateY(-6px);pointer-events:none;
+        transition:opacity .18s ease, transform .18s ease;z-index:20;
+      }
+      .log-card:hover .log-details,
+      .log-card:focus-within .log-details{opacity:1;transform:none;pointer-events:auto}
+      .log-details .sub > div{margin-bottom:8px}
+      .log-details .sub > div:last-child{margin-bottom:0}
+
       @media (max-width: 880px){
         .grid{grid-template-columns:1fr}
+        .compare-input-grid{grid-template-columns:1fr}
         .help-content{grid-template-columns:1fr}
         .container{padding:0 16px;margin:16px auto 32px}
         .topbar{padding:16px}
+        .sheet-tab{padding:9px 14px;font-size:13px}
+        .log-details{left:8px;right:8px}
       }
     </style>
 
@@ -505,7 +567,7 @@
 
   <body>
     <div class="topbar">
-      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v6.1</span></div>
+      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v6.8</span></div>
       <span id="status" class="topbar-status">就绪：粘贴数据后点"生成裂变结果"（或按 Ctrl+Enter）。</span>
       <div class="actions">
         <button class="btn" id="btnHelp">使用说明</button>
@@ -516,7 +578,13 @@
     </div>
 
     <div class="container">
-      <div class="card">
+      <div class="sheet-tabs" id="sheetTabs">
+        <button class="sheet-tab active" data-sheet="fenhuo">在途分货裂变</button>
+        <button class="sheet-tab" data-sheet="gongxu">供需对比</button>
+      </div>
+
+      <div class="card" id="fenhuoInputCard">
+        <div id="fenhuoSettings">
         <div class="settings-grid">
           <div class="field">
             <label>优先级方向</label>
@@ -581,6 +649,7 @@
         </div>
 
         <div class="hr"></div>
+        </div><!-- /#fenhuoSettings（裂变专属设置，供需对比 Sheet 隐藏） -->
 
         <div class="tabs">
           <div class="tab active" data-tab="grid">表格粘贴（推荐）</div>
@@ -639,6 +708,49 @@
         </div>
       </div>
 
+      <div class="card hidden" id="compareInputCard">
+        <div class="sub" style="margin:0 0 14px 0;padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md)">
+          <strong>供需对比</strong>：使用本 Sheet 的独立精简表。优先级数字越小越优先；先同规格、后跨规格；美规结余可补日规，日规结余不补美规。
+        </div>
+        <div class="compare-input-grid">
+          <div class="card">
+            <div class="sheet-toolbar">
+              <div class="row">
+                <h3 style="margin:0">需求</h3>
+                <div class="sheet-meta">
+                  <span class="meta-pill" id="metaCompareDemandUsed">已用 0 行</span>
+                  <span class="meta-pill" id="metaCompareDemandPaste">最近未粘贴</span>
+                </div>
+              </div>
+              <div class="row">
+                <button class="btn" id="btnAddCompareDemandRows">追加50行</button>
+                <button class="btn danger" id="btnClearCompareDemand">清空需求</button>
+              </div>
+            </div>
+            <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridCompareDemand"></table></div></div>
+            <div class="sub">列固定：型号 / 颜色 / 规格 / 数量 / 优先级</div>
+          </div>
+
+          <div class="card">
+            <div class="sheet-toolbar">
+              <div class="row">
+                <h3 style="margin:0">库存</h3>
+                <div class="sheet-meta">
+                  <span class="meta-pill" id="metaCompareSupplyUsed">已用 0 行</span>
+                  <span class="meta-pill" id="metaCompareSupplyPaste">最近未粘贴</span>
+                </div>
+              </div>
+              <div class="row">
+                <button class="btn" id="btnAddCompareSupplyRows">追加50行</button>
+                <button class="btn danger" id="btnClearCompareSupply">清空库存</button>
+              </div>
+            </div>
+            <div class="sheet-wrap"><div class="sheet-scroll"><table class="sheet" id="gridCompareSupply"></table></div></div>
+            <div class="sub">列固定：型号 / 颜色 / 规格 / 数量</div>
+          </div>
+        </div>
+      </div>
+
       <div class="card" id="resultsCard" style="margin-top:24px">
         <div class="results-header">
           <div class="tabs">
@@ -657,6 +769,67 @@
         <div class="result-panel hidden" data-result-panel="unmet"><div id="unmetWrap" class="sub">还没有生成结果。</div></div>
         <div class="result-panel hidden" data-result-panel="left"><div id="leftWrap" class="sub">还没有生成结果。</div></div>
         <div class="result-panel hidden" data-result-panel="quality"><div id="qualityWrap" class="sub">还没有生成结果。</div></div>
+      </div>
+
+      <div class="card hidden" id="compareCard" style="margin-top:24px">
+        <div class="results-header">
+          <div class="row">
+            <h3 style="margin:0">充电器采购建议</h3>
+            <span class="meta-pill" id="compareSummaryPill">尚未生成</span>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="btnRunCompare">生成供需对比<kbd class="kbd-hint">Ctrl ↵</kbd></button>
+            <button class="btn" id="btnDownloadCompareTSV" disabled>下载TSV</button>
+            <button class="btn" id="btnDownloadCompareXLSX" disabled>下载XLSX</button>
+          </div>
+        </div>
+        <div id="compareStatus" class="sub">在本 Sheet 的“需求 / 库存”精简表粘贴数据后，点“生成供需对比”。</div>
+        <div class="hr"></div>
+        <div class="compare-panel"><div id="cmpPurchaseWrap" class="sub">还没有生成结果。</div></div>
+      </div>
+
+      <div class="card log-card" style="margin-top:24px" tabindex="0">
+        <div class="log-preview">
+          <div>
+            <h3 style="margin:0">更新日志</h3>
+            <div class="sub"><strong>v6.8（2026-07-20）</strong>：美规库存满足日规需求时只计入“美规满足日规数量”，不再重复计入“需要采购数量”；其他异规格满足仍按目标规格生成采购建议。</div>
+          </div>
+          <div class="log-hint">悬浮展开</div>
+        </div>
+        <div class="log-details">
+          <div class="sub">
+            <div><strong>v6.8（2026-07-20）</strong>：修正美规补日的结果口径：美规结余满足日规属于免采购转换，仅展示“美规满足日规数量”；日规行的“需要采购数量”不包含这部分数量。</div>
+            <div><strong>v6.7（2026-07-20）</strong>：修正跨规格分配顺序：全部同规格匹配完成后，美规结余先满足日规缺口（日规内部仍按优先级）；之后才将剩余库存按需求行优先级从小到大分配，同优先级保持原始行顺序。</div>
+            <div><strong>v6.6（2026-07-20）</strong>：“需要采购数量”改为实际跨规格满足数量。例如欧规需求使用美规成品库存 100 台，则采购欧规充电器 100 个；没有对应成品库存时不产生采购建议。“美规满足日规数量”保留为专项统计。</div>
+            <div><strong>v6.5（2026-07-20）</strong>：供需对比结果精简为“型号 / 颜色 / 需求规格 / 需要采购数量 / 美规满足日规数量”单表；采购与美补日均为 0 的行自动隐藏，导出文件同步精简为采购建议。</div>
+            <div><strong>v6.4（2026-07-20）</strong>：供需对比改为独立精简输入表，需求仅保留“型号 / 颜色 / 规格 / 数量 / 优先级”，库存仅保留“型号 / 颜色 / 规格 / 数量”；粘贴统计、追加、清空、示例和结果状态均与裂变 Sheet 隔离。</div>
+            <div><strong>v6.3（2026-07-20）</strong>：修复供需对比读取 Excel 兼容字段时被空白规范列截断的问题；型号、颜色、规格、数量均改为读取首个非空字段，数量兼容“求和项:需求数量 / 求和项:可用量(主单位) / 可用量(主单位)”，并新增真实 Excel 对象形态自检。</div>
+            <div><strong>v6.2（2026-07-20）</strong>：新增顶层 Sheet 页签“在途分货裂变 / 供需对比”。供需对比复用左右两张表数据、独立按钮与结果区，与裂变结果互不影响；采用全局两阶段分配（先同规格、后跨规格），美规可补日规、日规不补美规，一般互补按“当前最大结余”动态取货；输出需求满足结果 / 规格互补明细 / 库存结余 / 数据质量 / 汇总对账，并内置控制台自检（window.runCompareSelfTest）。</div>
+            <div><strong>v6.1（2026-05-08）</strong>：左右两侧各新增“品牌 / 内存 / 安卓版本”三列选填匹配字段；任一边出现非空即启用校验，参与分配的两侧都必须填写并按归一化键匹配；跨规格保护同步尊重订单号与这三列。</div>
+            <div><strong>v6.0</strong>：左右两侧各再加一列通用辅助列（需求侧“通用辅助列3”、供给侧“通用辅助列2”），仅作文本附带、不参与匹配；OUT_COLS 与导出同步。</div>
+            <div><strong>v5.9</strong>：需求侧新增“通用辅助列2”，行为同“通用辅助列”，随行带到“未满足需求”。</div>
+            <div><strong>v5.8</strong>：需求侧新增“通用辅助列”，仅作文本附带、不参与匹配。</div>
+            <div><strong>v5.7</strong>：供给侧新增“通用辅助列”；整体 UI 改版（圆角、阴影、tabs、滚动条），交互逻辑不变；移除旧“更新日志”卡片。</div>
+            <div><strong>v5.6（2026-03-13）</strong>：统一全部文本匹配口径为大小写不敏感；型号、订单号、颜色、平台、库存状态、规格等列均按归一化键参与判断，尽量保留原始显示值。</div>
+            <div><strong>v5.5（2026-03-04）</strong>：修正订单号匹配口径：开启后在库/在途/其他状态统一按订单号匹配，不再允许在库跨订单分配。</div>
+            <div><strong>v5.4（2026-03-04）</strong>：调整库存状态规则：仅当库存状态列同时存在“在库/在途”时，按“同规格在库→同规格在途→异规格在库→异规格在途”补缺；来源规格自身仍有缺口时不得外借，并保留“美规优先补日规”。</div>
+            <div><strong>v5.3（2026-03-04）</strong>：重做库存状态规则：仅当库存状态列同时存在“在库/在途”时才区分状态；同规格原始存在在途时禁止异规格改制，且来源规格自身仍有缺口时不得外借。</div>
+            <div><strong>v5.2（2026-03-04）</strong>：库存状态提升为最外层分配阶段，按“在库→在途→其他状态”依次完整执行；库存状态整列留空时回退原规则。</div>
+            <div><strong>v5.1（2026-02-17）</strong>：在库可跨订单优先分配；修正表格溢出；更新日志改为悬浮展开且页面不跳动。</div>
+            <div><strong>v5.0（2026-02-17）</strong>：优化粘贴体验、折叠更新日志，明确“在库优先”，并精简生成前审核弹窗文案。</div>
+            <div><strong>v4.9（2026-02-17）</strong>：放开库存状态限制，不再限定“在库/在途”；支持任意库存状态文本参与分配，并保留“在库→在途→其他状态”的消耗顺序。</div>
+            <div><strong>v4.8（2026-02-17）</strong>：按业务口径微调跨规格规则：仅保留“美规结余优先给日规缺口”，不再额外保护日规库存（美规无结余时按正常优先级分配）。</div>
+            <div><strong>v4.7（2026-02-17）</strong>：跨规格互补新增全局保护：同型号同颜色（及同订单号）下，只要仍有日规缺口，非日规不会先占用美规结余，优先留给日规补缺。</div>
+            <div><strong>v4.6（2026-02-17）</strong>：修正亚马逊6/4分配逻辑：同型号+颜色+规格先跑完同规格（60%后40%）再跨规格互补；60%按箱规规则处理、40%不按箱规；小平台不再做箱规补齐。</div>
+            <div><strong>v4.5（2026-02-06）</strong>：重做生成前防呆弹窗样式与文案，替换原生alert/confirm为统一审核弹窗。</div>
+            <div><strong>v4.4（2026-02-06）</strong>：修复跨规格互补时日规优先级问题，先保障同型号同颜色（日规）缺口，再允许其他规格占用日规库存。</div>
+            <div><strong>v4.3（2026-02-06）</strong>：清理更新日志，移除字体需求相关记录。</div>
+            <div><strong>v4.2（2026-02-06）</strong>：优化导出参数兼容性。</div>
+            <div><strong>v4.1（2026-02-06）</strong>：新增生成前二次审核（订单号匹配、同规格裂变），并完善自动开关提醒逻辑。</div>
+            <div><strong>v4.0（2026-02-06）</strong>：库存状态移至最左列；库存状态整列留空可忽略、部分留空自动跳过；新增数据质量报告；裂变输出导出新增“映射”列。</div>
+            <div><strong>v3.0</strong>：基础分货裂变流程与导入导出能力。</div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -796,11 +969,14 @@
     </div>
 
   <script>
-    const APP_VERSION = "6.1";
+    const APP_VERSION = "6.8";
     const OPTIONAL_MATCH_COLS = ["品牌","内存","安卓版本"];
     const DEMAND_COLS = ["通用辅助列","通用辅助列2","通用辅助列3","销售采购订单号","型号","颜色","品牌","内存","安卓版本","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
     const SUPPLY_COLS = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","品牌","内存","安卓版本","规格","求和项:需求数量"];
     const OUT_COLS    = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","品牌","内存","安卓版本","站点","规格","需求数量"];
+    const COMPARE_DEMAND_COLS = ["型号","颜色","规格","数量","优先级"];
+    const COMPARE_SUPPLY_COLS = ["型号","颜色","规格","数量"];
+    const COMPARE_OUT_COLS = ["型号","颜色","需求规格","需要采购数量","美规满足日规数量"];
 
     // 显示名映射：底层数据键不变（导出 / 内部匹配照旧），只改 UI 表头显示
     const COL_LABELS = {
@@ -812,13 +988,20 @@
 
     const $ = (id)=>document.getElementById(id);
     const state = { outRows: [], unmetRows: [], leftRows: [], qualityRows: [] };
+    // 供需对比（Sheet 2）独立状态，与裂变 state 完全隔离
+    const compareState = { purchaseRows: [], qualityRows: [], summary: null };
+    let currentSheet = "fenhuo";
     const gridStats = {
       gridDemand: { pastedRows: 0, pastedCols: 0 },
-      gridSupply: { pastedRows: 0, pastedCols: 0 }
+      gridSupply: { pastedRows: 0, pastedCols: 0 },
+      gridCompareDemand: { pastedRows: 0, pastedCols: 0 },
+      gridCompareSupply: { pastedRows: 0, pastedCols: 0 }
     };
     const GRID_META = {
       gridDemand: { usedId: "metaDemandUsed", pasteId: "metaDemandPaste", label: "需求明细" },
-      gridSupply: { usedId: "metaSupplyUsed", pasteId: "metaSupplyPaste", label: "在途/库存明细" }
+      gridSupply: { usedId: "metaSupplyUsed", pasteId: "metaSupplyPaste", label: "在途/库存明细" },
+      gridCompareDemand: { usedId: "metaCompareDemandUsed", pasteId: "metaCompareDemandPaste", label: "供需对比需求" },
+      gridCompareSupply: { usedId: "metaCompareSupplyUsed", pasteId: "metaCompareSupplyPaste", label: "供需对比库存" }
     };
     document.title = `在途分货裂变 ${APP_VERSION}`;
     if($("appVersion")) $("appVersion").textContent = `v${APP_VERSION}`;
@@ -901,6 +1084,8 @@
     function getGridColumns(tableId){
       if(tableId === "gridDemand") return DEMAND_COLS;
       if(tableId === "gridSupply") return SUPPLY_COLS;
+      if(tableId === "gridCompareDemand") return COMPARE_DEMAND_COLS;
+      if(tableId === "gridCompareSupply") return COMPARE_SUPPLY_COLS;
       return [];
     }
     function syncCellTitle(cell){
@@ -1901,24 +2086,32 @@
       });
     });
 
-    // Ctrl/Cmd + Enter 触发生成
+    // Ctrl/Cmd + Enter 触发生成（按当前 Sheet 路由，裂变 Sheet 行为不变）
     document.addEventListener("keydown", (e)=>{
       if((e.ctrlKey || e.metaKey) && e.key === "Enter"){
         e.preventDefault();
-        $("btnRun").click();
+        if(currentSheet === "gongxu") $("btnRunCompare").click();
+        else $("btnRun").click();
       }
     });
 
     buildGrid("gridDemand", DEMAND_COLS, 50);
     buildGrid("gridSupply", SUPPLY_COLS, 50);
+    buildGrid("gridCompareDemand", COMPARE_DEMAND_COLS, 50);
+    buildGrid("gridCompareSupply", COMPARE_SUPPLY_COLS, 50);
 
     $("btnAddDemandRows").addEventListener("click", ()=>addRows("gridDemand", DEMAND_COLS, 50));
     $("btnAddSupplyRows").addEventListener("click", ()=>addRows("gridSupply", SUPPLY_COLS, 50));
     $("btnClearDemand").addEventListener("click", ()=>clearGrid("gridDemand"));
     $("btnClearSupply").addEventListener("click", ()=>clearGrid("gridSupply"));
+    $("btnAddCompareDemandRows").addEventListener("click", ()=>addRows("gridCompareDemand", COMPARE_DEMAND_COLS, 50));
+    $("btnAddCompareSupplyRows").addEventListener("click", ()=>addRows("gridCompareSupply", COMPARE_SUPPLY_COLS, 50));
+    $("btnClearCompareDemand").addEventListener("click", ()=>clearGrid("gridCompareDemand"));
+    $("btnClearCompareSupply").addEventListener("click", ()=>clearGrid("gridCompareSupply"));
 
     $("btnClearAll").addEventListener("click", ()=>{
       clearGrid("gridDemand"); clearGrid("gridSupply");
+      clearGrid("gridCompareDemand"); clearGrid("gridCompareSupply");
       $("fileDemand").value=""; $("fileSupply").value="";
       $("outWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
       $("unmetWrap").innerHTML = '<div class="sub">还没有生成结果。</div>';
@@ -1933,10 +2126,26 @@
       $("countLeft").textContent = "0";
       $("countQuality").textContent = "0";
       enableDownloads(false);
+      resetCompareResults("已清空。在本 Sheet 的精简表粘贴数据后点“生成供需对比”。");
       setStatus("已清空。", true);
     });
 
     $("btnLoadSample").addEventListener("click", ()=>{
+      if(currentSheet === "gongxu"){
+        fillGridFromObjects("gridCompareDemand", COMPARE_DEMAND_COLS, [
+          {"型号":"U11","颜色":"黑色","规格":"日","数量":"12","优先级":"1"},
+          {"型号":"U11","颜色":"黑色","规格":"美","数量":"8","优先级":"2"},
+          {"型号":"U11","颜色":"黑色","规格":"欧","数量":"10","优先级":"3"}
+        ]);
+        fillGridFromObjects("gridCompareSupply", COMPARE_SUPPLY_COLS, [
+          {"型号":"U11","颜色":"黑色","规格":"美","数量":"15"},
+          {"型号":"U11","颜色":"黑色","规格":"英","数量":"12"},
+          {"型号":"U11","颜色":"黑色","规格":"欧","数量":"4"}
+        ]);
+        resetCompareResults("已载入供需对比示例，点击“生成供需对比”查看结果。");
+        setStatus("已载入供需对比精简表示例。", true);
+        return;
+      }
       fillGridFromObjects("gridDemand", DEMAND_COLS, [
         {"通用辅助列":"备注X","通用辅助列2":"备注M","通用辅助列3":"备注P","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
         {"通用辅助列":"","通用辅助列2":"","通用辅助列3":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
@@ -1970,6 +2179,7 @@
         o["颜色简易版"] = r["颜色简易版"] ?? "";
         o["充电器版本"] = r["充电器版本"] ?? "";
         o["求和项:可用量(主单位)"] = r["求和项:可用量(主单位)"] ?? "";
+        o["可用量(主单位)"] = r["可用量(主单位)"] ?? "";
         o["规格"] = r["规格"] ?? o["规格"] ?? "";
         o["求和项:需求数量"] = r["求和项:需求数量"] ?? o["求和项:需求数量"] ?? "";
         o["销售型号"] = r["销售型号"] ?? o["销售型号"] ?? "";
@@ -2097,6 +2307,476 @@
       a.remove();
       URL.revokeObjectURL(url);
     });
+
+    /* ============================================================
+       供需对比（Sheet 2）——与生产“在途分货裂变”完全隔离
+       computeSupplyDemandCompare 为纯函数：不改入参、不触碰 state / supplyPool。
+       规则：型号+颜色独立成池；先完成全部同规格匹配；再由美规结余优先满足日规缺口；
+       最后按需求行优先级从小到大跨规格互补，同优先级按原始行顺序；美规需求禁用日规结余。
+       ============================================================ */
+    const COMPARE_SPEC_ORDER = ["日","美","欧","英"];
+    function compareSpecOrderIndex(k){
+      const i = COMPARE_SPEC_ORDER.indexOf(k);
+      return i === -1 ? COMPARE_SPEC_ORDER.length : i;
+    }
+    // 单向规则：仅禁止“美规需求使用日规结余”（美可给日，日不可给美）
+    function compareSourceAllowed(demandSpecKey, sourceSpecKey){
+      if(demandSpecKey === "美" && sourceSpecKey === "日") return false;
+      return true;
+    }
+
+    function computeSupplyDemandCompare(demandRowsRaw, supplyRowsRaw){
+      const quality = [];
+      const addQ = (type, rowNo, detail)=> quality.push({ "类型": type, "行号": rowNo == null ? "-" : String(rowNo), "说明": detail });
+
+      function firstNonBlankValue(...values){
+        for(const value of values){
+          if(value != null && String(value).trim() !== "") return value;
+        }
+        return "";
+      }
+
+      // 数量解析：返回 {empty, ok, val, shown}；负数/非数字视为无效
+      function parseQty(raw){
+        const s = String(raw ?? "").trim();
+        if(s === "") return { empty:true,  ok:false, val:0, shown:"" };
+        const n = Number(s.replace(/,/g, ""));
+        if(!Number.isFinite(n) || n < 0) return { empty:false, ok:false, val:0, shown:s };
+        return { empty:false, ok:true, val: Math.floor(n), shown:s };
+      }
+
+      // ---------- 读取需求（型号 / 颜色 / 需求规格 / SI数量 / 优先级） ----------
+      const demands = [];
+      for(let i=0;i<(demandRowsRaw || []).length;i++){
+        const r = demandRowsRaw[i] || {};
+        const rowNo = i + 1;
+        const model = String(r["型号"] ?? "").trim();
+        const color = String(r["颜色"] ?? "").trim();
+        const spec  = String(r["需求规格"] ?? "").trim();
+        const qtyRaw = r["SI数量"];
+        if(!model && !color && !spec && String(qtyRaw ?? "").trim() === "") continue; // 空行跳过
+        const problems = [];
+        if(!model) problems.push("型号为空");
+        if(!color) problems.push("颜色为空");
+        if(!spec)  problems.push("需求规格为空");
+        const q = parseQty(qtyRaw);
+        if(q.empty) problems.push("SI数量为空");
+        else if(!q.ok) problems.push(`SI数量“${q.shown}”无效（需非负整数）`);
+        if(problems.length){ addQ("跳过需求行", rowNo, problems.join("，")); continue; }
+
+        const prioRaw = String(r["优先级"] ?? "").trim();
+        let prioVal;
+        if(prioRaw === ""){ prioVal = Number.POSITIVE_INFINITY; }
+        else {
+          const pn = Number(prioRaw);
+          if(Number.isFinite(pn)){ prioVal = pn; }
+          else { prioVal = Number.POSITIVE_INFINITY; addQ("优先级修正", rowNo, `优先级“${prioRaw}”不是数字，已按最低优先级处理。`); }
+        }
+        demands.push({
+          rowNo, idx:i, model, color, spec,
+          modelKey: normText(model), colorKey: normText(color), specKey: normSpecKey(spec),
+          qty: q.val, prioRaw, prioVal, sameMet:0, crossMet:0
+        });
+      }
+
+      // ---------- 读取库存并汇总（忽略订单号 / 站点 / 平台 / 库存状态；按 型号+颜色+规格 汇总） ----------
+      const supMap = new Map();
+      let supSeq = 0;
+      for(let i=0;i<(supplyRowsRaw || []).length;i++){
+        const r = supplyRowsRaw[i] || {};
+        const rowNo = i + 1;
+        const model = String(firstNonBlankValue(r["销售型号"], r["自营销售型号"])).trim();
+        const color = String(firstNonBlankValue(r["颜色"], r["颜色简易版"])).trim();
+        const spec  = String(firstNonBlankValue(r["规格"], r["充电器版本"])).trim();
+        const qtyRaw = firstNonBlankValue(r["求和项:需求数量"], r["求和项:可用量(主单位)"], r["可用量(主单位)"]);
+        if(!model && !color && !spec && String(qtyRaw ?? "").trim() === "") continue; // 空行跳过
+        const problems = [];
+        if(!model) problems.push("型号为空");
+        if(!color) problems.push("颜色为空");
+        if(!spec)  problems.push("规格为空");
+        const q = parseQty(qtyRaw);
+        if(q.empty) problems.push("数量为空");
+        else if(!q.ok) problems.push(`数量“${q.shown}”无效（需非负整数）`);
+        if(problems.length){ addQ("跳过库存行", rowNo, problems.join("，")); continue; }
+
+        const key = [normText(model), normText(color), normSpecKey(spec)].join("||");
+        let g = supMap.get(key);
+        if(!g){
+          g = { seq: supSeq++, model, color, spec, modelKey: normText(model), colorKey: normText(color), specKey: normSpecKey(spec), orig:0, sameUsed:0, crossUsed:0, remain:0 };
+          supMap.set(key, g);
+        }
+        g.orig += q.val;
+        g.remain += q.val;
+      }
+
+      // ---------- 组池：型号+颜色（绝不跨型号或跨颜色） ----------
+      const poolMap = new Map();
+      function poolOf(mk, ck, model, color){
+        const k = mk + "||" + ck;
+        let p = poolMap.get(k);
+        if(!p){ p = { model, color, demands:[], specMap:new Map() }; poolMap.set(k, p); }
+        return p;
+      }
+      for(const d of demands) poolOf(d.modelKey, d.colorKey, d.model, d.color).demands.push(d);
+      for(const g of supMap.values()) poolOf(g.modelKey, g.colorKey, g.model, g.color).specMap.set(g.specKey, g);
+
+      // 优先级数字小先分；同优先级保持原始需求行顺序
+      const cmpDemand = (a,b)=> (a.prioVal !== b.prioVal) ? (a.prioVal - b.prioVal) : (a.idx - b.idx);
+      const complement = [];
+      const mkComp = (d, srcGroup, qty)=> complement.push({
+        "型号": d.model, "颜色": d.color, "需求规格": d.spec, "来源库存规格": srcGroup.spec,
+        "互补数量": qty, "需求优先级": d.prioRaw === "" ? "(空)" : d.prioRaw, "需求行号": d.rowNo
+      });
+
+      // ---------- 分配：全局两阶段 ----------
+      for(const p of poolMap.values()){
+        // 阶段一：每个 型号+颜色+规格 内，仅用同规格库存、按优先级满足。
+        // 所有规格都先跑完阶段一（同规格互不影响、天然满足“全部完成后才进入跨规格”）。
+        const bySpec = new Map();
+        for(const d of p.demands){ if(!bySpec.has(d.specKey)) bySpec.set(d.specKey, []); bySpec.get(d.specKey).push(d); }
+        for(const [specKey, ds] of bySpec){
+          const g = p.specMap.get(specKey);
+          if(!g || g.remain <= 0) continue;
+          for(const d of ds.slice().sort(cmpDemand)){
+            if(g.remain <= 0) break;
+            const need = d.qty - d.sameMet;
+            if(need <= 0) continue;
+            const take = Math.min(need, g.remain);
+            d.sameMet += take; g.remain -= take; g.sameUsed += take;
+          }
+        }
+        // 阶段二：美规结余优先满足全部日规缺口，不被其他规格的更高优先级抢占。
+        // 日规存在多条需求时，内部仍按“优先级小先分、同优先级原始行先分”。
+        const gUS = p.specMap.get("美");
+        if(gUS && gUS.remain > 0){
+          const jpUnmet = p.demands
+            .filter(d => d.specKey === "日" && (d.qty - d.sameMet - d.crossMet) > 0)
+            .sort(cmpDemand);
+          for(const d of jpUnmet){
+            if(gUS.remain <= 0) break;
+            const need = d.qty - d.sameMet - d.crossMet;
+            const take = Math.min(need, gUS.remain);
+            if(take <= 0) continue;
+            gUS.remain -= take; gUS.crossUsed += take; d.crossMet += take;
+            mkComp(d, gUS, take);
+          }
+        }
+
+        // 阶段三：剩余缺口按每条需求的优先级从小到大处理，同优先级保持原始行顺序。
+        const unmet = p.demands.filter(d => (d.qty - d.sameMet - d.crossMet) > 0).sort(cmpDemand);
+        for(const d of unmet){
+          let need = d.qty - d.sameMet - d.crossMet;
+          if(need <= 0) continue;
+
+          // 一般互补：从允许的其他规格结余中，动态取“当前结余最大”的规格先消耗，耗完再比较
+          while(need > 0){
+            let best = null;
+            for(const g of p.specMap.values()){
+              if(g.remain <= 0 || g.specKey === d.specKey) continue;       // 跳过无结余 / 同规格
+              if(!compareSourceAllowed(d.specKey, g.specKey)) continue;     // 单向：美规需求不得用日规
+              if(best === null || g.remain > best.remain){ best = g; continue; }
+              if(g.remain === best.remain){
+                // 数量相同：稳定、可解释的顺序（日→美→欧→英→其他键名）
+                const gi = compareSpecOrderIndex(g.specKey), bi = compareSpecOrderIndex(best.specKey);
+                if(gi < bi || (gi === bi && g.specKey < best.specKey)) best = g;
+              }
+            }
+            if(!best) break;
+            const take = Math.min(need, best.remain);
+            best.remain -= take; best.crossUsed += take; d.crossMet += take; need -= take;
+            mkComp(d, best, take);
+          }
+        }
+      }
+
+      // ---------- 结果表 ----------
+      const demandResult = demands.slice().sort((a,b)=>a.idx-b.idx).map(d=>{
+        const total = d.sameMet + d.crossMet;
+        return {
+          "需求行号": d.rowNo, "型号": d.model, "颜色": d.color, "需求规格": d.spec,
+          "优先级": d.prioRaw === "" ? "(空)" : d.prioRaw,
+          "原需求数量": d.qty, "同规格满足": d.sameMet, "跨规格满足": d.crossMet,
+          "合计满足": total, "仍缺口": Math.max(0, d.qty - total)
+        };
+      });
+      const inventoryLeft = Array.from(supMap.values()).sort((a,b)=>a.seq-b.seq).map(g=>({
+        "型号": g.model, "颜色": g.color, "规格": g.spec,
+        "原库存": g.orig, "同规格消耗": g.sameUsed, "跨规格消耗": g.crossUsed, "剩余数量": g.remain
+      }));
+      const sum = (arr, f)=> arr.reduce((a,x)=>a+f(x), 0);
+      const summary = {
+        demandRows: demands.length,
+        demandQty: sum(demands, d=>d.qty),
+        sameMet:   sum(demands, d=>d.sameMet),
+        crossMet:  sum(demands, d=>d.crossMet),
+        shortage:  sum(demands, d=>Math.max(0, d.qty - d.sameMet - d.crossMet)),
+        supplyQty: sum(inventoryLeft, g=>g["原库存"]),
+        consumed:  sum(inventoryLeft, g=>g["同规格消耗"] + g["跨规格消耗"]),
+        leftQty:   sum(inventoryLeft, g=>g["剩余数量"]),
+        qualityCount: quality.length
+      };
+      return { demandResult, complement, inventoryLeft, quality, summary };
+    }
+
+    function buildPurchaseSuggestion(compareResult){
+      const grouped = new Map();
+      let seq = 0;
+
+      function displaySpec(spec){
+        const key = normSpecKey(spec);
+        return ["日","美","欧","英"].includes(key) ? `${key}规` : String(spec ?? "").trim();
+      }
+      function ensure(model, color, spec){
+        const key = [normText(model), normText(color), normSpecKey(spec)].join("||");
+        if(!grouped.has(key)){
+          grouped.set(key, {
+            __seq: seq++,
+            "型号": String(model ?? "").trim(),
+            "颜色": String(color ?? "").trim(),
+            "需求规格": displaySpec(spec),
+            "需要采购数量": 0,
+            "美规满足日规数量": 0
+          });
+        }
+        return grouped.get(key);
+      }
+
+      for(const row of compareResult.complement || []){
+        const qty = toInt(row["互补数量"]);
+        if(qty <= 0) continue;
+        const target = ensure(row["型号"], row["颜色"], row["需求规格"]);
+        const isUsToJp = normSpecKey(row["需求规格"]) === "日" && normSpecKey(row["来源库存规格"]) === "美";
+        if(isUsToJp){
+          target["美规满足日规数量"] += qty;
+        }else{
+          target["需要采购数量"] += qty;
+        }
+      }
+
+      return Array.from(grouped.values())
+        .sort((a,b)=>a.__seq-b.__seq)
+        .filter(row=>row["需要采购数量"] > 0 || row["美规满足日规数量"] > 0)
+        .map(({__seq, ...row})=>row);
+    }
+
+    // ---- 供需对比 UI（独立结果区、独立状态、独立下载） ----
+    function renderCompareEmpty(msg){
+      const el = $("cmpPurchaseWrap");
+      if(el) el.innerHTML = `<div class="sub">${escapeHtml(msg)}</div>`;
+    }
+    function enableCompareDownloads(on){
+      $("btnDownloadCompareTSV").disabled = !on;
+      $("btnDownloadCompareXLSX").disabled = !on;
+    }
+    function resetCompareResults(msg){
+      compareState.purchaseRows = []; compareState.qualityRows = []; compareState.summary = null;
+      renderCompareEmpty("还没有生成结果。");
+      enableCompareDownloads(false);
+      const pill = $("compareSummaryPill"); if(pill) pill.textContent = "尚未生成";
+      const st = $("compareStatus"); if(st){ st.className = "sub"; st.textContent = msg || "在本 Sheet 的精简表粘贴数据后点“生成供需对比”。"; }
+    }
+
+    function readCompareInputData(){
+      const demandRows = readGridData("gridCompareDemand", COMPARE_DEMAND_COLS).map(r=>({
+        "型号": r["型号"],
+        "颜色": r["颜色"],
+        "需求规格": r["规格"],
+        "SI数量": r["数量"],
+        "优先级": r["优先级"]
+      }));
+      const supplyRows = readGridData("gridCompareSupply", COMPARE_SUPPLY_COLS).map(r=>({
+        "销售型号": r["型号"],
+        "颜色": r["颜色"],
+        "规格": r["规格"],
+        "求和项:需求数量": r["数量"]
+      }));
+      return { demandRows, supplyRows };
+    }
+
+    $("btnRunCompare").addEventListener("click", ()=>{
+      try{
+        enableCompareDownloads(false);
+        const { demandRows: demRows, supplyRows: supRows } = readCompareInputData();
+        if(demRows.length === 0 && supRows.length === 0){
+          renderCompareEmpty("需求与库存精简表都为空。请先粘贴数据，或点“载入示例”。");
+          $("compareSummaryPill").textContent = "无数据";
+          $("compareStatus").className = "sub warn";
+          $("compareStatus").textContent = "无数据：请先在本 Sheet 的需求和库存表粘贴数据。";
+          return;
+        }
+
+        const res = computeSupplyDemandCompare(demRows, supRows);
+        const purchaseRows = buildPurchaseSuggestion(res);
+        const purchaseQty = purchaseRows.reduce((sum,row)=>sum + toInt(row["需要采购数量"]), 0);
+        const usToJpQty = purchaseRows.reduce((sum,row)=>sum + toInt(row["美规满足日规数量"]), 0);
+        compareState.purchaseRows = purchaseRows;
+        compareState.qualityRows = res.quality;
+        compareState.summary = { ...res.summary, purchaseQty, usToJpQty, outputRows: purchaseRows.length };
+
+        renderTable("cmpPurchaseWrap", purchaseRows.length ? purchaseRows : [{"提示":"没有发生异规格库存匹配，无充电器采购建议"}]);
+        enableCompareDownloads(purchaseRows.length > 0);
+
+        const qualityOk = res.quality.length === 0;
+        $("compareSummaryPill").textContent = `需采购 ${purchaseQty} · 美补日 ${usToJpQty}`;
+        $("compareStatus").className = "sub " + (qualityOk ? "ok" : "warn");
+        $("compareStatus").textContent = `输出 ${purchaseRows.length} 行；需要采购 ${purchaseQty}；美规库存满足日规需求 ${usToJpQty}；数据提示 ${res.quality.length} 条。`;
+        setStatus(`供需对比完成：需要采购 ${purchaseQty}，美规满足日规 ${usToJpQty}。`, qualityOk);
+      }catch(e){
+        console.error(e);
+        renderCompareEmpty("生成失败：" + (e?.message || String(e)));
+        $("compareSummaryPill").textContent = "失败";
+        $("compareStatus").className = "sub warn";
+        $("compareStatus").textContent = "生成失败：" + (e?.message || String(e));
+        enableCompareDownloads(false);
+      }
+    });
+
+    $("btnDownloadCompareTSV").addEventListener("click", ()=>{
+      if(!compareState.purchaseRows.length) return;
+      downloadText(`充电器采购建议_v${APP_VERSION}.tsv`, rowsToTSV(compareState.purchaseRows, COMPARE_OUT_COLS), "text/tab-separated-values;charset=utf-8");
+    });
+
+    $("btnDownloadCompareXLSX").addEventListener("click", ()=>{
+      if(!window.XLSX){ setStatus("XLSX库未加载：可用TSV下载。", false); return; }
+      if(!compareState.purchaseRows.length) return;
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(compareState.purchaseRows, {header:COMPARE_OUT_COLS}), "采购建议");
+      applyWorkbookFont(wb, "微软雅黑", 10);
+      const buf = XLSX.write(wb, { bookType:"xlsx", type:"array", cellStyles:true });
+      const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `充电器采购建议_v${APP_VERSION}.xlsx`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // ---- 顶层 Sheet 切换：仅切换显示，不生成、不清空、不污染任一 Sheet 的结果与状态 ----
+    function switchSheet(name){
+      currentSheet = (name === "gongxu") ? "gongxu" : "fenhuo";
+      const isG = currentSheet === "gongxu";
+      document.querySelectorAll(".sheet-tab[data-sheet]").forEach(t=> t.classList.toggle("active", t.dataset.sheet === currentSheet));
+      $("fenhuoInputCard").classList.toggle("hidden", isG); // 裂变专属输入
+      $("compareInputCard").classList.toggle("hidden", !isG); // 供需对比专属精简输入
+      $("resultsCard").classList.toggle("hidden", isG);      // 裂变结果区
+      $("btnRun").classList.toggle("hidden", isG);           // 裂变生成按钮
+      $("compareCard").classList.toggle("hidden", !isG);     // 供需对比结果区
+      try{ localStorage.setItem("activeSheet", currentSheet); }catch(e){}
+    }
+    document.querySelectorAll(".sheet-tab[data-sheet]").forEach(t=> t.addEventListener("click", ()=> switchSheet(t.dataset.sheet)));
+    try{
+      const savedSheet = localStorage.getItem("activeSheet");
+      switchSheet(savedSheet === "gongxu" ? "gongxu" : "fenhuo");
+    }catch(e){ switchSheet("fenhuo"); }
+
+    // ---- 供需对比：轻量自检（控制台运行 window.runCompareSelfTest()；不污染生产 UI） ----
+    function runCompareSelfTest(){
+      const R = [];
+      const check = (name, cond, extra)=> R.push({ name, pass: !!cond, extra: extra || "" });
+      const D = (model,color,spec,qty,prio)=>({ "型号":model, "颜色":color, "需求规格":spec, "SI数量":String(qty), "优先级": prio == null ? "" : String(prio) });
+      const S = (model,color,spec,qty,extra)=> Object.assign({ "销售型号":model, "颜色":color, "规格":spec, "求和项:需求数量":String(qty) }, extra || {});
+      const byNo = (arr,no)=> arr.find(r=>r["需求行号"] === no);
+      const leftOf = (arr,spec)=> arr.find(r=> normSpecKey(r["规格"]) === normSpecKey(spec));
+      const srcSeq = (r)=> r.complement.map(c=>[normSpecKey(c["来源库存规格"]), c["互补数量"]]);
+      let r;
+
+      // T1 同规格全局优先：日(prio1) 阶段一不得抢走美库存；美(prio2) 同规格保住
+      r = computeSupplyDemandCompare([D("M","C","日",10,1), D("M","C","美",10,2)], [S("M","C","美",10)]);
+      check("T1 同规格全局优先", byNo(r.demandResult,2)["同规格满足"] === 10 && byNo(r.demandResult,1)["跨规格满足"] === 0 && byNo(r.demandResult,1)["仍缺口"] === 10, JSON.stringify(r.demandResult));
+
+      // T2 优先级小先分（同规格内 prio1 先于 prio5）
+      r = computeSupplyDemandCompare([D("M","C","美",10,5), D("M","C","美",10,1)], [S("M","C","美",10)]);
+      check("T2 优先级小先分", byNo(r.demandResult,2)["同规格满足"] === 10 && byNo(r.demandResult,1)["同规格满足"] === 0, JSON.stringify(r.demandResult));
+
+      // T3 美->日（美规结余可补日规缺口）
+      r = computeSupplyDemandCompare([D("M","C","日",6,1)], [S("M","C","美",10)]);
+      check("T3 美可补日", byNo(r.demandResult,1)["跨规格满足"] === 6 && r.complement.some(c=>normSpecKey(c["来源库存规格"]) === "美" && c["互补数量"] === 6) && leftOf(r.inventoryLeft,"美")["剩余数量"] === 4, JSON.stringify(r));
+
+      // T4 日->美 禁止（单向）
+      r = computeSupplyDemandCompare([D("M","C","美",6,1)], [S("M","C","日",10)]);
+      check("T4 日不可补美", byNo(r.demandResult,1)["跨规格满足"] === 0 && byNo(r.demandResult,1)["仍缺口"] === 6 && leftOf(r.inventoryLeft,"日")["剩余数量"] === 10, JSON.stringify(r));
+
+      // T5 最大结余动态选择（欧需求：英7 > 美5，先英后美）
+      r = computeSupplyDemandCompare([D("M","C","欧",8,1)], [S("M","C","美",5), S("M","C","英",7)]);
+      let seq = srcSeq(r);
+      check("T5 最大结余动态选择", byNo(r.demandResult,1)["跨规格满足"] === 8 && seq.length === 2 && seq[0][0] === "英" && seq[0][1] === 7 && seq[1][0] === "美" && seq[1][1] === 1, JSON.stringify(seq));
+
+      // T6 型号/颜色隔离（不同型号+颜色不得互取）
+      r = computeSupplyDemandCompare([D("M2","C2","日",10,1)], [S("M1","C1","美",10)]);
+      check("T6 型号颜色隔离", byNo(r.demandResult,1)["合计满足"] === 0 && byNo(r.demandResult,1)["仍缺口"] === 10 && leftOf(r.inventoryLeft,"美")["剩余数量"] === 10, JSON.stringify(r));
+
+      // T7 忽略订单号/站点/库存状态并按 型号+颜色+规格 汇总
+      r = computeSupplyDemandCompare([D("M","C","美",8,1)], [S("M","C","美",5,{"库存状态":"在库","销售采购订单号":"PO1","站点":"US"}), S("M","C","美",5,{"库存状态":"在途","销售采购订单号":"PO2","站点":"JP"})]);
+      check("T7 同键汇总", r.inventoryLeft.length === 1 && leftOf(r.inventoryLeft,"美")["原库存"] === 10 && leftOf(r.inventoryLeft,"美")["剩余数量"] === 2, JSON.stringify(r.inventoryLeft));
+
+      // T8 日规先吃美，再进入一般互补（美先于更大的英）
+      r = computeSupplyDemandCompare([D("M","C","日",10,1)], [S("M","C","美",5), S("M","C","英",8)]);
+      seq = srcSeq(r);
+      check("T8 日先吃美再一般互补", seq.length === 2 && seq[0][0] === "美" && seq[0][1] === 5 && seq[1][0] === "英" && seq[1][1] === 5, JSON.stringify(seq));
+
+      // T9 Excel 真实对象：规范字段显式为空时，必须继续读取兼容字段
+      r = computeSupplyDemandCompare(
+        [D("U11","BLACK","JP",5,1)],
+        [{
+          "销售型号":"", "自营销售型号":"u11",
+          "颜色":"", "颜色简易版":"black",
+          "规格":"", "充电器版本":"JP",
+          "求和项:需求数量":"", "求和项:可用量(主单位)":"", "可用量(主单位)":"7"
+        }]
+      );
+      check("T9 Excel 空规范字段回退兼容列", byNo(r.demandResult,1)["同规格满足"] === 5 && leftOf(r.inventoryLeft,"日")["原库存"] === 7 && leftOf(r.inventoryLeft,"日")["剩余数量"] === 2 && r.quality.length === 0, JSON.stringify(r));
+
+      // T10 美规补日免采购：仅展示美规满足日规数量
+      r = computeSupplyDemandCompare([D("M","C","日",100,1)], [S("M","C","日",60), S("M","C","美",30)]);
+      let suggestion = buildPurchaseSuggestion(r);
+      check("T10 美规补日只记专项数量", suggestion.length === 1 && suggestion[0]["需求规格"] === "日规" && suggestion[0]["需要采购数量"] === 0 && suggestion[0]["美规满足日规数量"] === 30, JSON.stringify(suggestion));
+
+      // T11 同规格完全满足时不输出
+      r = computeSupplyDemandCompare([D("M","C","日",10,1)], [S("M","C","日",10)]);
+      suggestion = buildPurchaseSuggestion(r);
+      check("T11 同规格满足不展示", suggestion.length === 0, JSON.stringify(suggestion));
+
+      // T12 其他异规格实际满足多少，就采购多少目标规格充电器
+      r = computeSupplyDemandCompare([D("M","C","欧",10,1)], [S("M","C","英",10)]);
+      suggestion = buildPurchaseSuggestion(r);
+      check("T12 其他异规格满足转采购", suggestion.length === 1 && suggestion[0]["需求规格"] === "欧规" && suggestion[0]["需要采购数量"] === 10 && suggestion[0]["美规满足日规数量"] === 0, JSON.stringify(suggestion));
+
+      // T13 没有任何同型号+颜色库存：只是成品缺口，不采购充电器
+      r = computeSupplyDemandCompare([D("AP10","黑色","欧",949,1)], []);
+      suggestion = buildPurchaseSuggestion(r);
+      check("T13 无成品库存不展示", suggestion.length === 0, JSON.stringify(suggestion));
+
+      // T14 只有同规格库存：未满足部分仍是成品缺口，不采购充电器
+      r = computeSupplyDemandCompare([D("AP10","黑色","欧",949,1)], [S("AP10","黑色","欧",1)]);
+      suggestion = buildPurchaseSuggestion(r);
+      check("T14 同规格部分满足不展示", suggestion.length === 0, JSON.stringify(suggestion));
+
+      // T15 欧规需求由美规成品库存满足100：采购欧规充电器100
+      r = computeSupplyDemandCompare([D("AP10","黑色","欧",949,1)], [S("AP10","黑色","美",100)]);
+      suggestion = buildPurchaseSuggestion(r);
+      check("T15 异规格库存实际满足多少采购多少", suggestion.length === 1 && suggestion[0]["需求规格"] === "欧规" && suggestion[0]["需要采购数量"] === 100 && suggestion[0]["美规满足日规数量"] === 0, JSON.stringify(suggestion));
+
+      // T16 美规补日是独立阶段：即使欧规优先级更高，也必须先满足日规缺口
+      r = computeSupplyDemandCompare([D("M","C","欧",10,1), D("M","C","日",6,999)], [S("M","C","美",10)]);
+      suggestion = buildPurchaseSuggestion(r);
+      check("T16 美规结余优先补日", byNo(r.demandResult,2)["跨规格满足"] === 6 && byNo(r.demandResult,1)["跨规格满足"] === 4 && suggestion.some(x=>x["需求规格"] === "日规" && x["需要采购数量"] === 0 && x["美规满足日规数量"] === 6) && suggestion.some(x=>x["需求规格"] === "欧规" && x["需要采购数量"] === 4), JSON.stringify(r));
+
+      // T17 日规优先阶段结束后，剩余库存按需求行优先级从小到大分配
+      r = computeSupplyDemandCompare([D("M","C","英",6,999), D("M","C","欧",8,1), D("M","C","欧",8,2), D("M","C","日",4,4)], [S("M","C","美",14)]);
+      check("T17 剩余库存逐行按优先级分配", byNo(r.demandResult,4)["跨规格满足"] === 4 && byNo(r.demandResult,2)["跨规格满足"] === 8 && byNo(r.demandResult,3)["跨规格满足"] === 2 && byNo(r.demandResult,1)["跨规格满足"] === 0, JSON.stringify(r.demandResult));
+
+      // T18 同优先级按原始行顺序稳定分配
+      r = computeSupplyDemandCompare([D("M","C","英",5,1), D("M","C","欧",5,1)], [S("M","C","美",5)]);
+      check("T18 同优先级按原始行顺序", byNo(r.demandResult,1)["跨规格满足"] === 5 && byNo(r.demandResult,2)["跨规格满足"] === 0, JSON.stringify(r.demandResult));
+
+      const passed = R.filter(x=>x.pass).length;
+      const allPass = passed === R.length;
+      console.groupCollapsed(`%c[供需对比自检] ${passed}/${R.length} 通过${allPass ? " ✅" : " ❌"}`, `color:${allPass ? "#7A9B76" : "#BD5D3A"};font-weight:600`);
+      R.forEach(x=> x.pass ? console.log("✅ " + x.name) : console.warn("❌ " + x.name + "  " + x.extra));
+      console.groupEnd();
+      return { passed, total: R.length, allPass, results: R };
+    }
+    try{ window.runCompareSelfTest = runCompareSelfTest; runCompareSelfTest(); }catch(e){ console.warn("供需对比自检未运行：", e); }
   </script>
   </body>
   </html>
