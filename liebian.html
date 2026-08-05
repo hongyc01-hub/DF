@@ -567,7 +567,7 @@
 
   <body>
     <div class="topbar">
-      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v6.8</span></div>
+      <div class="brand"><span class="dot"></span>在途分货裂变 <span class="pill" id="appVersion">v6.9</span></div>
       <span id="status" class="topbar-status">就绪：粘贴数据后点"生成裂变结果"（或按 Ctrl+Enter）。</span>
       <div class="actions">
         <button class="btn" id="btnHelp">使用说明</button>
@@ -792,12 +792,13 @@
         <div class="log-preview">
           <div>
             <h3 style="margin:0">更新日志</h3>
-            <div class="sub"><strong>v6.8（2026-07-20）</strong>：美规库存满足日规需求时只计入“美规满足日规数量”，不再重复计入“需要采购数量”；其他异规格满足仍按目标规格生成采购建议。</div>
+            <div class="sub"><strong>v6.9（2026-08-05）</strong>：在途分货的需求、库存及输出新增选填匹配字段“地区版本”，行为与“安卓版本”一致；两边均留空时忽略，任一边启用后按值严格匹配。</div>
           </div>
           <div class="log-hint">悬浮展开</div>
         </div>
         <div class="log-details">
           <div class="sub">
+            <div><strong>v6.9（2026-08-05）</strong>：需求明细与在途/库存明细新增“地区版本”列，纳入可选字段校验、同规格/跨规格匹配、亚马逊分组、结果合并、未满足需求、库存剩余及导出；供需对比 Sheet 保持原有精简字段。</div>
             <div><strong>v6.8（2026-07-20）</strong>：修正美规补日的结果口径：美规结余满足日规属于免采购转换，仅展示“美规满足日规数量”；日规行的“需要采购数量”不包含这部分数量。</div>
             <div><strong>v6.7（2026-07-20）</strong>：修正跨规格分配顺序：全部同规格匹配完成后，美规结余先满足日规缺口（日规内部仍按优先级）；之后才将剩余库存按需求行优先级从小到大分配，同优先级保持原始行顺序。</div>
             <div><strong>v6.6（2026-07-20）</strong>：“需要采购数量”改为实际跨规格满足数量。例如欧规需求使用美规成品库存 100 台，则采购欧规充电器 100 个；没有对应成品库存时不产生采购建议。“美规满足日规数量”保留为专项统计。</div>
@@ -849,7 +850,7 @@
             <ul>
               <li><strong>型号 ↔ 销售型号</strong>、<strong>颜色 ↔ 颜色</strong>、<strong>需求规格 ↔ 规格</strong>：硬匹配，必须相同。</li>
               <li><strong>销售采购订单号</strong>：开关在设置里。开就严格匹配；任一边空值自动降级为忽略。</li>
-              <li><strong>品牌 / 内存 / 安卓版本</strong>：选填。两边都填且相同才匹配；只填一边会报错；都不填则跳过。</li>
+              <li><strong>品牌 / 内存 / 安卓版本 / 地区版本</strong>：选填。两边都填且相同才匹配；只填一边会报错；都不填则跳过。</li>
               <li><strong>跨规格补缺</strong>：默认禁止。关掉"只允许同规格"后，同规格先跑完再跨规格补（日规缺口优先吃美规）。</li>
             </ul>
           </div>
@@ -866,7 +867,7 @@
               <dt>型号 / 颜色</dt>
               <dd>必填硬匹配键。</dd>
 
-              <dt>品牌 / 内存 / 安卓版本</dt>
+              <dt>品牌 / 内存 / 安卓版本 / 地区版本</dt>
               <dd>选填匹配键。</dd>
 
               <dt>站点（平台）</dt>
@@ -910,7 +911,7 @@
               <dt>销售型号 / 颜色</dt>
               <dd>必填，对应需求侧的"型号 / 颜色"。</dd>
 
-              <dt>品牌 / 内存 / 安卓版本</dt>
+              <dt>品牌 / 内存 / 安卓版本 / 地区版本</dt>
               <dd>选填匹配键。</dd>
 
               <dt>规格</dt>
@@ -941,7 +942,7 @@
           <div class="help-section">
             <h4>三个最容易踩的坑</h4>
             <ul>
-              <li>品牌 / 内存 / 安卓版本只填一边 → 报错。要么两边都填，要么都不填。</li>
+              <li>品牌 / 内存 / 安卓版本 / 地区版本只填一边 → 报错。要么两边都填，要么都不填。</li>
               <li>库存状态只填了"在库"或只填了"在途" → 优先级失效，按出现顺序消耗。</li>
               <li>箱规取整默认是关。要按箱发货记得开，并填正整数箱规。</li>
             </ul>
@@ -969,11 +970,11 @@
     </div>
 
   <script>
-    const APP_VERSION = "6.8";
-    const OPTIONAL_MATCH_COLS = ["品牌","内存","安卓版本"];
-    const DEMAND_COLS = ["通用辅助列","通用辅助列2","通用辅助列3","销售采购订单号","型号","颜色","品牌","内存","安卓版本","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
-    const SUPPLY_COLS = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","品牌","内存","安卓版本","规格","求和项:需求数量"];
-    const OUT_COLS    = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","品牌","内存","安卓版本","站点","规格","需求数量"];
+    const APP_VERSION = "6.9";
+    const OPTIONAL_MATCH_COLS = ["品牌","内存","安卓版本","地区版本"];
+    const DEMAND_COLS = ["通用辅助列","通用辅助列2","通用辅助列3","销售采购订单号","型号","颜色","品牌","内存","安卓版本","地区版本","站点（平台）","SI数量","品线","需求规格","平台","箱规信息","优先级"];
+    const SUPPLY_COLS = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","品牌","内存","安卓版本","地区版本","规格","求和项:需求数量"];
+    const OUT_COLS    = ["通用辅助列","通用辅助列2","库存状态","销售采购订单号","物料编码","销售型号","颜色","品牌","内存","安卓版本","地区版本","站点","规格","需求数量"];
     const COMPARE_DEMAND_COLS = ["型号","颜色","规格","数量","优先级"];
     const COMPARE_SUPPLY_COLS = ["型号","颜色","规格","数量"];
     const COMPARE_OUT_COLS = ["型号","颜色","需求规格","需要采购数量","美规满足日规数量"];
@@ -1524,7 +1525,7 @@
       if(missing.length){
         const shown = missing.slice(0, 12).join("；");
         const more = missing.length > 12 ? `；另有${missing.length - 12}处未列出` : "";
-        throw new Error(`品牌/内存/安卓版本为选填匹配字段：只要任一边启用，对应字段两边都必须填写。${shown}${more}`);
+        throw new Error(`品牌/内存/安卓版本/地区版本为选填匹配字段：只要任一边启用，对应字段两边都必须填写。${shown}${more}`);
       }
     }
 
@@ -1547,10 +1548,12 @@
         memoryKey: normOptionalMatchKey(r["内存"]),
         androidVersion: String(r["安卓版本"] ?? "").trim(),
         androidVersionKey: normOptionalMatchKey(r["安卓版本"]),
+        regionVersion: String(r["地区版本"] ?? "").trim(),
+        regionVersionKey: normOptionalMatchKey(r["地区版本"]),
         spec:   String(r["规格"] ?? r["充电器版本"] ?? "").trim(),
         specKey: normSpecKey(r["规格"] ?? r["充电器版本"] ?? ""),
         qtyLeft: toInt(r["求和项:需求数量"] ?? r["求和项:可用量(主单位)"] ?? 0),
-      })).filter(x => x.aux || x.aux2 || x.order || x.mat || x.status || x.model || x.color || x.brand || x.memory || x.androidVersion || x.spec || x.qtyLeft);
+      })).filter(x => x.aux || x.aux2 || x.order || x.mat || x.status || x.model || x.color || x.brand || x.memory || x.androidVersion || x.regionVersion || x.spec || x.qtyLeft);
     }
 
     function matchStatusPhase(status, statusPhase){
@@ -1576,7 +1579,7 @@
           const take = Math.min(need, s.qtyLeft);
           s.qtyLeft -= take;
           need -= take;
-          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, brand:s.brand, memory:s.memory, androidVersion:s.androidVersion, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, brand:s.brand, memory:s.memory, androidVersion:s.androidVersion, regionVersion:s.regionVersion, spec:s.spec, qty:take });
         }
         return allocs;
       }
@@ -1592,7 +1595,7 @@
           s.qtyLeft -= take;
           need -= take;
 
-          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, brand:s.brand, memory:s.memory, androidVersion:s.androidVersion, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, brand:s.brand, memory:s.memory, androidVersion:s.androidVersion, regionVersion:s.regionVersion, spec:s.spec, qty:take });
         }
         return allocs;
       }
@@ -1608,7 +1611,7 @@
           s.qtyLeft -= take;
           need -= take;
 
-          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, brand:s.brand, memory:s.memory, androidVersion:s.androidVersion, spec:s.spec, qty:take });
+          allocs.push({ aux:s.aux, aux2:s.aux2, order:s.order, mat:s.mat, status:s.status, model:s.model, color:s.color, brand:s.brand, memory:s.memory, androidVersion:s.androidVersion, regionVersion:s.regionVersion, spec:s.spec, qty:take });
         }
       }
       passByStatus((status)=>status === "在库");
@@ -1620,7 +1623,7 @@
     function consolidateOut(rows){
       const m = new Map();
       for(const r of rows){
-        const k = [r["通用辅助列"], r["通用辅助列2"], r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["品牌"], r["内存"], r["安卓版本"], r["站点"], r["规格"]].join("||");
+        const k = [r["通用辅助列"], r["通用辅助列2"], r["销售采购订单号"], r["物料编码"], r["库存状态"], r["销售型号"], r["颜色"], r["品牌"], r["内存"], r["安卓版本"], r["地区版本"], r["站点"], r["规格"]].join("||");
         const cur = m.get(k) || { ...r, "需求数量": 0 };
         cur["需求数量"] = toInt(cur["需求数量"]) + toInt(r["需求数量"]);
         m.set(k, cur);
@@ -1675,6 +1678,8 @@
           memoryKey: normOptionalMatchKey(r["内存"]),
           androidVersion: String(r["安卓版本"] ?? "").trim(),
           androidVersionKey: normOptionalMatchKey(r["安卓版本"]),
+          regionVersion: String(r["地区版本"] ?? "").trim(),
+          regionVersionKey: normOptionalMatchKey(r["地区版本"]),
           site: (r["站点（平台）"] ?? "").trim(),
           demandQty: toInt(r["SI数量"]),
           spec: String(r["需求规格"] ?? "").trim(),
@@ -1716,6 +1721,7 @@
           "品牌": alloc.brand ?? "",
           "内存": alloc.memory ?? "",
           "安卓版本": alloc.androidVersion ?? "",
+          "地区版本": alloc.regionVersion ?? "",
           "站点": site,
           "规格": alloc.spec,
           "需求数量": alloc.qty,
@@ -1741,6 +1747,7 @@
         if(optionalMatchEnabled["品牌"] && s.brandKey !== d.brandKey) return false;
         if(optionalMatchEnabled["内存"] && s.memoryKey !== d.memoryKey) return false;
         if(optionalMatchEnabled["安卓版本"] && s.androidVersionKey !== d.androidVersionKey) return false;
+        if(optionalMatchEnabled["地区版本"] && s.regionVersionKey !== d.regionVersionKey) return false;
         return true;
       }
       function optionalAttrGroupParts(d){
@@ -1748,6 +1755,7 @@
         if(optionalMatchEnabled["品牌"]) parts.push(d.brandKey);
         if(optionalMatchEnabled["内存"]) parts.push(d.memoryKey);
         if(optionalMatchEnabled["安卓版本"]) parts.push(d.androidVersionKey);
+        if(optionalMatchEnabled["地区版本"]) parts.push(d.regionVersionKey);
         return parts;
       }
       function sourceSpecHasOwnUnmetDemand(s, targetSpec=""){
@@ -2003,7 +2011,7 @@
             "通用辅助列2": d.aux2,
             "通用辅助列3": d.aux3,
             "销售采购订单号": d.order,
-            "型号": d.model, "颜色": d.color, "品牌": d.brand, "内存": d.memory, "安卓版本": d.androidVersion, "站点": d.site, "规格": d.spec, "平台": d.platform,
+            "型号": d.model, "颜色": d.color, "品牌": d.brand, "内存": d.memory, "安卓版本": d.androidVersion, "地区版本": d.regionVersion, "站点": d.site, "规格": d.spec, "平台": d.platform,
             "原需求": d.demandQty, "已分配": got(d), "仍缺口": m, "优先级": d.__prio, "箱规": d.box
           });
         }
@@ -2020,6 +2028,7 @@
         "品牌": s.brand,
         "内存": s.memory,
         "安卓版本": s.androidVersion,
+        "地区版本": s.regionVersion,
         "规格": s.spec,
         "剩余数量": s.qtyLeft
       }));
@@ -2038,6 +2047,7 @@
             "品牌": s.brand,
             "内存": s.memory,
             "安卓版本": s.androidVersion,
+            "地区版本": s.regionVersion,
             "站点": siteName,
             "规格": s.spec,
             "需求数量": s.qtyLeft
@@ -2147,15 +2157,15 @@
         return;
       }
       fillGridFromObjects("gridDemand", DEMAND_COLS, [
-        {"通用辅助列":"备注X","通用辅助列2":"备注M","通用辅助列3":"备注P","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
-        {"通用辅助列":"","通用辅助列2":"","通用辅助列3":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
-        {"通用辅助列":"备注Y","通用辅助列2":"备注N","通用辅助列3":"备注Q","销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
-        {"通用辅助列":"","通用辅助列2":"","通用辅助列3":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
+        {"通用辅助列":"备注X","通用辅助列2":"备注M","通用辅助列3":"备注P","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","地区版本":"全球版","站点（平台）":"UK","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"12"},
+        {"通用辅助列":"","通用辅助列2":"","通用辅助列3":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","地区版本":"全球版","站点（平台）":"DE","SI数量":"32","品线":"智能平板","需求规格":"欧","平台":"亚马逊","箱规信息":"8","优先级":"99"},
+        {"通用辅助列":"备注Y","通用辅助列2":"备注N","通用辅助列3":"备注Q","销售采购订单号":"PO3","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","地区版本":"全球版","站点（平台）":"JP","SI数量":"32","品线":"智能平板","需求规格":"日","平台":"亚马逊","箱规信息":"8","优先级":"50"},
+        {"通用辅助列":"","通用辅助列2":"","通用辅助列3":"","销售采购订单号":"PO1","型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","地区版本":"全球版","站点（平台）":"TEMU","SI数量":"20","品线":"智能平板","需求规格":"欧","平台":"小平台","箱规信息":"8","优先级":"6"}
       ]);
       fillGridFromObjects("gridSupply", SUPPLY_COLS, [
-        {"通用辅助列":"备注A","通用辅助列2":"备注α","销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","规格":"欧","求和项:需求数量":"40"},
-        {"通用辅助列":"备注B","通用辅助列2":"备注β","销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","规格":"美","求和项:需求数量":"20"},
-        {"通用辅助列":"","通用辅助列2":"","销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","规格":"日","求和项:需求数量":"8"}
+        {"通用辅助列":"备注A","通用辅助列2":"备注α","销售采购订单号":"PO1","物料编码":"M1","库存状态":"在库","销售型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","地区版本":"全球版","规格":"欧","求和项:需求数量":"40"},
+        {"通用辅助列":"备注B","通用辅助列2":"备注β","销售采购订单号":"PO2","物料编码":"M2","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","地区版本":"全球版","规格":"美","求和项:需求数量":"20"},
+        {"通用辅助列":"","通用辅助列2":"","销售采购订单号":"PO3","物料编码":"M3","库存状态":"在途","销售型号":"AP12","颜色":"蓝色","品牌":"BrandA","内存":"8GB","安卓版本":"Android 13","地区版本":"全球版","规格":"日","求和项:需求数量":"8"}
       ]);
       setStatus("已载入示例：同匹配条件先分在库再分在途；订单号匹配开关可控。", true);
     });
@@ -2264,7 +2274,7 @@
       }catch(e){
         console.error(e);
         setStatus("失败：" + (e?.message || String(e)), false);
-        $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态支持任意文本（整列留空会忽略该列，部分留空会跳过空值行）；品牌/内存/安卓版本任一边启用后两边都必须填写并按值匹配；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
+        $("outWrap").innerHTML = '<div class="sub warn">生成失败：库存状态支持任意文本（整列留空会忽略该列，部分留空会跳过空值行）；品牌/内存/安卓版本/地区版本任一边启用后两边都必须填写并按值匹配；开启“按销售采购订单号匹配”时，需求侧订单号不能为空。</div>';
         $("unmetWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
         $("leftWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
         $("qualityWrap").innerHTML = '<div class="sub warn">生成失败。</div>';
